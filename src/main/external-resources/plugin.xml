@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../grammars/ro/sync/oxygen/plugin/plugin.dtd"?>
+<!DOCTYPE plugin SYSTEM "../plugin.dtd">
+<plugin 
+    id="top:marchand:oxygen:maven:project"
+    class="top.marchand.oxygen.maven.project.support.MavenProjectPlugin"
+    classLoaderType="preferOxygenResources"
+    name="${project.name}"
+    vendor="Christophe Marchand"
+    version="${project.version}"
+    description="${project.description}">
+  <extension 
+      type="WorkspaceAccess" 
+      class="top.marchand.oxygen.maven.project.support.MavenProjectViewExtension"
+  />
+  <runtime>
+    <library name="maven-project-support-1.00.00-SNAPSHOT.jar"/>
+  </runtime>
+  <view 
+      id="top.marchand.oxygen.maven.project.view" 
+      initialRow="0"
+      initialSide="WEST"
+      initialState="autohide"
+  />
+</plugin>
