@@ -15,24 +15,36 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.tree.TreeNode;
+import org.apache.log4j.Logger;
+import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 
 /**
  *
  * @author cmarchand
  */
 public class MavenFileNode extends AbstractMavenNode {
+    private static final Logger LOGGER = Logger.getLogger(MavenFileNode.class);
     private final Path file;
     private final String fileName;
+    private final URL fileUrl;
     
     public MavenFileNode(Path file) {
         super();
         this.file=file;
         fileName = file.getFileName().toString();
+        URL url = null;
+        try {
+            url = file.toUri().toURL();
+        } catch(MalformedURLException ex) { }
+        fileUrl = url;
     }
 
     @Override
@@ -41,9 +53,10 @@ public class MavenFileNode extends AbstractMavenNode {
     }
 
     @Override
-    public ImageIcon getIcon() {
-        // FIXME
-        return null;
+    public Icon getIcon() {
+        Object ret = PluginWorkspaceProvider.getPluginWorkspace().getImageUtilities().getIconDecoration(fileUrl);
+        // ret is an object from an obfuscated class, which extends ImageIcon
+        return (Icon)ret;
     }
 
     @Override

@@ -138,14 +138,14 @@ public class MavenProjectExplorer {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
             Path relative = root.relativize(file);
-            LOGGER.info("Visiting "+relative.toString());
-            if(relative.getNameCount()>3 && relative.startsWith(SRC)) {
+            LOGGER.debug("Visiting "+relative.toString());
+            if(isFileAcceptable(file) && relative.getNameCount()>3 && relative.startsWith(SRC)) {
                 String packageName=null;
                 if(relative.getNameCount()>4) {
                     Path packagePath = relative.subpath(3, relative.getNameCount()-1);
-                    LOGGER.info("Package Path: "+packagePath.toString());
+                    LOGGER.debug("Package Path: "+packagePath.toString());
                     packageName = packagePath.toString().replaceAll("[/\\\\]", ".");
-                    LOGGER.info("Package name: "+packageName);
+                    LOGGER.debug("Package name: "+packageName);
                 } else {
                     packageName = "<default>";
                 }

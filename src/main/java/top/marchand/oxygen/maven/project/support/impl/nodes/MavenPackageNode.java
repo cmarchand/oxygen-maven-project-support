@@ -38,8 +38,7 @@ public class MavenPackageNode extends AbstractMavenParentNode {
 
     @Override
     public ImageIcon getIcon() {
-        // FIXME
-        return null;
+        return ImageHandler.getInstance().get(ImageHandler.PACKAGE_ICON);
     }
     
 }

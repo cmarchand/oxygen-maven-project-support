@@ -16,8 +16,11 @@
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
-import javax.swing.ImageIcon;
+import java.util.List;
+import javax.swing.Icon;
+import javax.swing.UIManager;
 
 /**
  *
@@ -27,6 +30,7 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
     private final String value;
     private final Path directory;
     private final HashMap<String,MavenPackageNode> packages;
+    private static final List<String> VALID_PARENT_DIRS = Arrays.asList("main","site","test");
     
     public MavenDirectoryNode(Path directory) {
         super();
@@ -41,8 +45,36 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
     }
 
     @Override
-    public ImageIcon getIcon() {
-        // FIXME
+    public Icon getIcon() {
+        if(getParent()!=null && VALID_PARENT_DIRS.contains(getParent().getValue())) {
+            switch(getValue().toLowerCase()) {
+//                case "java": return ImageHandler.getInstance().get(ImageHandler.JAVA_ICON);
+                case "ant": return ImageHandler.getInstance().get(ImageHandler.ANT_ICON);
+                case "css": return ImageHandler.getInstance().get(ImageHandler.CSS_ICON);
+                case "dtd": return ImageHandler.getInstance().get(ImageHandler.DTD_ICON);
+                case "epub": return ImageHandler.getInstance().get(ImageHandler.EPUB_ICON);
+                case "fo": return ImageHandler.getInstance().get(ImageHandler.FO_ICON);
+                case "html": return ImageHandler.getInstance().get(ImageHandler.HTML_ICON);
+                case "js":
+                case "javascript": return ImageHandler.getInstance().get(ImageHandler.JS_ICON);
+                case "json": return ImageHandler.getInstance().get(ImageHandler.JSON_ICON);
+                case "md": return ImageHandler.getInstance().get(ImageHandler.MD_ICON);
+                case "nvdl": return ImageHandler.getInstance().get(ImageHandler.NVDL_ICON);
+                case "rnc": return ImageHandler.getInstance().get(ImageHandler.RNC_ICON);
+                case "grammars":
+                case "rng": return ImageHandler.getInstance().get(ImageHandler.RNG_ICON);
+                case "sch": return ImageHandler.getInstance().get(ImageHandler.SCH_ICON);
+                case "sql": return ImageHandler.getInstance().get(ImageHandler.SQL_ICON);
+                case "wsdl": return ImageHandler.getInstance().get(ImageHandler.WSDL_ICON);
+                case "xproc": return ImageHandler.getInstance().get(ImageHandler.XPROC_ICON);
+                case "xspec": return ImageHandler.getInstance().get(ImageHandler.XSPEC_ICON);
+                case "xsl": return ImageHandler.getInstance().get(ImageHandler.XSL_ICON);
+            }
+        }
+        if(isLeaf()) {
+            // change default icon to closed folder icon.
+            return (Icon)(UIManager.get("Tree.closedIcon"));
+        }
         return null;
     }
 

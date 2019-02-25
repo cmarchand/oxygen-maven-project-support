@@ -15,7 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.tree.TreeNode;
 
 /**
@@ -35,7 +35,7 @@ public abstract class AbstractMavenNode implements TreeNode, Comparable<Abstract
      * Returns the icon to display on this node
      * @return 
      */
-    public abstract ImageIcon getIcon();
+    public abstract Icon getIcon();
 
     @Override
     public String toString() {

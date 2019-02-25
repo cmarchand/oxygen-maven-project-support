@@ -26,7 +26,28 @@ import javax.swing.ImageIcon;
  */
 public class ImageHandler {
     private static final String PACKAGE_BASE = "/top/marchand/oxygen/icons/";
+    public static final String ANT_ICON = "AntIcon16.png";
+    public static final String CSS_ICON = "CssIcon16.png";
+    public static final String DTD_ICON = "DtdIcon16.png";
+    public static final String EPUB_ICON = "EpubIcon16.png";
+    public static final String FO_ICON = "FoIcon16.png";
+    public static final String HTML_ICON = "HtmlIcon16.png";
+    public static final String JS_ICON = "JsIcon16.png";
+    public static final String JSON_ICON = "JsonIcon16.png";
+    public static final String MD_ICON = "MDIcon16.png";
     public static final String MAVEN_ICON = "Maven2Icon.gif";
+    public static final String NVDL_ICON = "NVDLIcon16.png";
+    public static final String PHP_ICON = "PhpIcon16.png";
+    public static final String RNC_ICON = "RncIcon16.png";
+    public static final String RNG_ICON = "RngIcon16.png";
+    public static final String SCH_ICON = "SchIcon16.png";
+    public static final String SQL_ICON = "SqlIcon16.png";
+    public static final String WSDL_ICON = "WsdlIcon16.png";
+    public static final String PACKAGE_ICON = "package.png";
+    public static final String XPROC_ICON = "XProcIcon16.png";
+    public static final String XSPEC_ICON = "XSpecIcon16.png";
+    public static final String XSL_ICON = "XslIcon16.png";
+    public static final String XQUERY_ICON = "";
     private static ImageHandler INSTANCE;
     
     private final Map<String,ImageIcon> cache;
