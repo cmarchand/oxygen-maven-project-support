@@ -33,7 +33,7 @@ public class MavenProjectViewExtension implements WorkspaceAccessPluginExtension
         pluginWorkspaceAccess.addViewComponentCustomizer(new ViewComponentCustomizer() {
             public void customizeView(ViewInfo viewInfo) {
                 if("top.marchand.oxygen.maven.project.view".equals(viewInfo.getViewID())) {
-                    viewInfo.setComponent(new MavenProjectView());
+                    viewInfo.setComponent(new MavenProjectView(pluginWorkspaceAccess));
                     viewInfo.setTitle("Maven Project");
                 }
             }

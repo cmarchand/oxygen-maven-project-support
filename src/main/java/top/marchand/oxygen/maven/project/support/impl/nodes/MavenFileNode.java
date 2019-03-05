@@ -88,5 +88,13 @@ public class MavenFileNode extends AbstractMavenNode {
     public Enumeration children() {
         return Collections.emptyEnumeration();
     }
+
+    public Path getFile() {
+        return file;
+    }
+
+    public URL getFileUrl() {
+        return fileUrl;
+    }
     
 }

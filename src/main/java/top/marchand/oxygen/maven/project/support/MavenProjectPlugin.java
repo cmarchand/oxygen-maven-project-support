@@ -15,7 +15,9 @@
  */
 package top.marchand.oxygen.maven.project.support;
 
+import java.util.List;
 import ro.sync.exml.plugin.PluginDescriptor;
+import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 
 
 
@@ -26,6 +28,7 @@ import ro.sync.exml.plugin.PluginDescriptor;
 public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
     private static MavenProjectPlugin INSTANCE;
     private final PluginDescriptor pluginDescriptor;
+    private List<Object> dependencies;
     
     public MavenProjectPlugin(PluginDescriptor descriptor) {
         super(descriptor);
@@ -41,6 +44,11 @@ public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
     
     public PluginDescriptor getPluginDescriptor() {
         return pluginDescriptor;
+    }
+    
+    public void updateDependencies() {
+        String projectDirectory = PluginWorkspaceProvider.getPluginWorkspace().getUtilAccess().expandEditorVariables("${pd}", null);
+        
     }
     
 }

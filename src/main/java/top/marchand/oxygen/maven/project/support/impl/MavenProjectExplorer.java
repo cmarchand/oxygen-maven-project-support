@@ -21,6 +21,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +35,7 @@ import net.sf.saxon.s9api.XdmNode;
 import org.apache.log4j.Logger;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenDirectoryNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenProjectNode;
 
 /**
@@ -86,9 +88,11 @@ public class MavenProjectExplorer {
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
             Path relative = root.relativize(dir);
-            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
+//            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
             if(root.equals(dir)) {
-                MavenProjectNode node = new MavenProjectNode(getProjectName(dir.resolve("pom.xml").toFile()));
+                Path pom = dir.resolve("pom.xml");
+                MavenProjectNode node = new MavenProjectNode(getProjectName(pom.toFile()));
+                node.appendChild(new MavenFileNode(pom));
                 rootNode = node;
                 return FileVisitResult.CONTINUE;
             } else if(isTraversable(relative)) {
@@ -124,7 +128,7 @@ public class MavenProjectExplorer {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             if(exc!=null) throw exc;
             Path relative = root.relativize(dir);
-            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
+//            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
             if(root.equals(dir)) {
                 // terminated
             } else if(isTraversable(relative)) {
@@ -138,14 +142,14 @@ public class MavenProjectExplorer {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
             Path relative = root.relativize(file);
-            LOGGER.debug("Visiting "+relative.toString());
+//            LOGGER.debug("Visiting "+relative.toString());
             if(isFileAcceptable(file) && relative.getNameCount()>3 && relative.startsWith(SRC)) {
                 String packageName=null;
                 if(relative.getNameCount()>4) {
                     Path packagePath = relative.subpath(3, relative.getNameCount()-1);
-                    LOGGER.debug("Package Path: "+packagePath.toString());
+//                    LOGGER.debug("Package Path: "+packagePath.toString());
                     packageName = packagePath.toString().replaceAll("[/\\\\]", ".");
-                    LOGGER.debug("Package name: "+packageName);
+//                    LOGGER.debug("Package name: "+packageName);
                 } else {
                     packageName = "<default>";
                 }
@@ -162,6 +166,8 @@ public class MavenProjectExplorer {
         
         private boolean isTraversable(Path dir) {
             if(EXCLUDE_DIRS.contains(dir.getFileName().toString())) return false;
+            // xspec compiled by oxygen. I do not want them
+            if(dir.getFileName().toString().equals("xspec") && hasParent(dir, "xspec") && hasParent(dir, "src")) return false;
             if(includeTargetDirectory) return true;
             return !"target".equals(dir.getFileName().toString());
         }
@@ -178,6 +184,14 @@ public class MavenProjectExplorer {
             LOGGER.error("while getting projectName from "+pomFile.getAbsolutePath(), ex);
             return "UNKNOWN";
         }
+    }
+    protected boolean hasParent(Path file, String parentName) {
+        Path parent = file.getParent();
+        while(parent!=null) {
+            if(parentName.equals(parent.getFileName().toString())) return true;
+            parent = parent.getParent();
+        }
+        return false;
     }
     private XdmNode parsePomFile(File pomFile) throws SaxonApiException {
         DocumentBuilder builder = proc.newDocumentBuilder();

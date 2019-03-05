@@ -54,6 +54,9 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
                 case "dtd": return ImageHandler.getInstance().get(ImageHandler.DTD_ICON);
                 case "epub": return ImageHandler.getInstance().get(ImageHandler.EPUB_ICON);
                 case "fo": return ImageHandler.getInstance().get(ImageHandler.FO_ICON);
+                case "gaulois":
+                case "pipes":
+                case "pipe": return ImageHandler.getInstance().get(ImageHandler.GAULOIS_ICON);
                 case "html": return ImageHandler.getInstance().get(ImageHandler.HTML_ICON);
                 case "js":
                 case "javascript": return ImageHandler.getInstance().get(ImageHandler.JS_ICON);

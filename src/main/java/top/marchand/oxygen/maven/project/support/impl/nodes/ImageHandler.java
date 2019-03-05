@@ -31,6 +31,7 @@ public class ImageHandler {
     public static final String DTD_ICON = "DtdIcon16.png";
     public static final String EPUB_ICON = "EpubIcon16.png";
     public static final String FO_ICON = "FoIcon16.png";
+    public static final String GAULOIS_ICON = "gaulois2.png";
     public static final String HTML_ICON = "HtmlIcon16.png";
     public static final String JS_ICON = "JsIcon16.png";
     public static final String JSON_ICON = "JsonIcon16.png";
