@@ -301,6 +301,7 @@ public class MavenProjectView extends javax.swing.JPanel {
     protected class DependencyScanner extends SwingWorker<String, Integer> {
 
         private final Path pomFile;
+        private String repositoryUrl=null;
         protected DependencyScanner(Path pomFile) {
             super();
             this.pomFile=pomFile;
@@ -313,8 +314,13 @@ public class MavenProjectView extends javax.swing.JPanel {
             InvocationRequest request = new DefaultInvocationRequest();
             request.setPomFile(pomFile.toFile());
             request.setOffline(true);
-            request.setGoals(Collections.singletonList("dependency:tree"));
+            request.setGoals(Arrays.asList("clean compile dependency:tree"));
             request.setBatchMode(true);
+            // -e
+            request.setShowErrors(true);
+            // -X
+            request.setDebug(true);
+            request.setMavenOpts("-Dmaven.test.skip=true");
 
             Invoker invoker = new DefaultInvoker();
             File mavenHome = new File(new File(System.getProperty("user.home")), "applications/apache-maven-3.6.0");
@@ -329,39 +335,22 @@ public class MavenProjectView extends javax.swing.JPanel {
                 InvocationResult result = invoker.execute(request);
                 ps.flush();
                 output = baos.toString("UTF-8");
+                LOGGER.info("Maven terminated");
             } catch(MavenInvocationException | UnsupportedEncodingException ex) {
                 LOGGER.error("while calling maven", ex);
             }
-            for(DependencyEntry dep: untree(filter(output))) {
-                LOGGER.debug(dep);
-            }
-            // seconde exécution, classpath
-            lblStatus.setText("CP...");
-            request = new DefaultInvocationRequest();
-            request.setPomFile(pomFile.toFile());
-            request.setOffline(true);
-            request.setGoals(Arrays.asList("clean compile"));
-            request.setBatchMode(true);
-            request.setShowErrors(true);
-            request.setDebug(true);
-            request.setMavenOpts("-Dmaven.test.skip=true");
-            output="";
-            try {
-                InvocationResult result = invoker.execute(request);
-                ps.flush();
-                output = baos.toString("UTF-8");
-            } catch(MavenInvocationException | UnsupportedEncodingException ex) {
-                LOGGER.error("while calling maven", ex);
-            }
-            LOGGER.debug(output);
             List<String> classpath = filterClasspath(output);
-            for(String s: classpath) {
+            classpath.forEach((s) -> {
                 LOGGER.debug("Entry: "+s);
-            }
+            });
+            String filtered = filter(output);
+            untree(filtered).forEach((dep) -> {
+                LOGGER.debug(dep);
+            });
             lblStatus.setText("");
             return "OK";
         }
-        private List<DependencyEntry> untree(String input) {
+        private List<DependencyEntry> untree(final String input) {
             Pattern pattern = Pattern.compile("^[+-\\\\| ]*");
             List<DependencyEntry> ret = new ArrayList<>();
             BufferedReader reader = new BufferedReader(new StringReader(input));
@@ -385,7 +374,7 @@ public class MavenProjectView extends javax.swing.JPanel {
             }
             return ret;
         }
-        private List<String> filterClasspath(String input) {
+        private List<String> filterClasspath(final String input) {
             TreeSet<String> set = new TreeSet<>();
             BufferedReader reader = new BufferedReader(new StringReader(input));
             try {
@@ -423,33 +412,39 @@ public class MavenProjectView extends javax.swing.JPanel {
             } catch(InterruptedException | ExecutionException ex) {
                 LOGGER.error(ex);
             }
+            LOGGER.info("repository Url: "+repositoryUrl);
         }
         
-        private String filter(String output) {
+        private String filter(final String input) {
             Pattern pattern = Pattern.compile("maven-dependency-plugin:[0-9]+\\.[0-9]+(\\.[0-9]+)?:tree");
-            StringWriter sw = new StringWriter(output.length());
-            PrintWriter writer = new PrintWriter(sw);
-            BufferedReader reader = new BufferedReader(new StringReader(output));
-            try {
-                String line = reader.readLine();
-                boolean inTree = false;
-                while(line!=null) {
-                    if(!inTree) {
-                        Matcher m = pattern.matcher(line);
-                        if(m.find()) {
-                            inTree = true;
+            StringWriter sw = new StringWriter();
+            try (PrintWriter writer = new PrintWriter(sw)) {
+                BufferedReader reader = new BufferedReader(new StringReader(input));
+                try {
+                    String line = reader.readLine();
+                    boolean inTree = false;
+                    while(line!=null) {
+                        if(!inTree) {
+                            Matcher m = pattern.matcher(line);
+                            if(m.find()) {
+                                inTree = true;
+                            }
+                        } else if(inTree && ("[INFO]".equals(line.trim()) || line.startsWith("[INFO] ---------------------"))) {
+                            inTree = false;
+                        } else if(inTree) {
+                            if(line.startsWith("[INFO]")) {
+                                writer.println(line);
+                            } else if(line.startsWith("      url:") && repositoryUrl==null) {
+                                repositoryUrl = line.substring("      url:".length());
+                            }
                         }
-                    } else if(inTree && ("[INFO]".equals(line.trim()) || line.startsWith("[INFO] ---------------------"))) {
-                        inTree = false;
-                    } else if(inTree) {
-                        writer.println(line);
+                        line = reader.readLine();
                     }
-                    line = reader.readLine();
+                } catch(IOException ex) {
+                    LOGGER.error("while filtering output", ex);
                 }
-            } catch(IOException ex) {
-                LOGGER.error("while filtering output", ex);
+                writer.flush();
             }
-            writer.flush();
             return sw.toString();
         }
     }
