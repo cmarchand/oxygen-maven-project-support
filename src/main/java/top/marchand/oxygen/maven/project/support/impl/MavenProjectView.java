@@ -29,9 +29,11 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -307,7 +309,7 @@ public class MavenProjectView extends javax.swing.JPanel {
         @Override
         public String doInBackground() {
             LOGGER.info("Getting dependencies...");
-            lblStatus.setText("Maven...");
+            lblStatus.setText("Deps..");
             InvocationRequest request = new DefaultInvocationRequest();
             request.setPomFile(pomFile.toFile());
             request.setOffline(true);
@@ -332,6 +334,29 @@ public class MavenProjectView extends javax.swing.JPanel {
             }
             for(DependencyEntry dep: untree(filter(output))) {
                 LOGGER.debug(dep);
+            }
+            // seconde exécution, classpath
+            lblStatus.setText("CP...");
+            request = new DefaultInvocationRequest();
+            request.setPomFile(pomFile.toFile());
+            request.setOffline(true);
+            request.setGoals(Arrays.asList("clean compile"));
+            request.setBatchMode(true);
+            request.setShowErrors(true);
+            request.setDebug(true);
+            request.setMavenOpts("-Dmaven.test.skip=true");
+            output="";
+            try {
+                InvocationResult result = invoker.execute(request);
+                ps.flush();
+                output = baos.toString("UTF-8");
+            } catch(MavenInvocationException | UnsupportedEncodingException ex) {
+                LOGGER.error("while calling maven", ex);
+            }
+            LOGGER.debug(output);
+            List<String> classpath = filterClasspath(output);
+            for(String s: classpath) {
+                LOGGER.debug("Entry: "+s);
             }
             lblStatus.setText("");
             return "OK";
@@ -360,12 +385,42 @@ public class MavenProjectView extends javax.swing.JPanel {
             }
             return ret;
         }
-
+        private List<String> filterClasspath(String input) {
+            TreeSet<String> set = new TreeSet<>();
+            BufferedReader reader = new BufferedReader(new StringReader(input));
+            try {
+                String line=reader.readLine();
+                while(line!=null) {
+                    if(line.contains("classpathElements")) {
+                        //LOGGER.debug("classpathElements found");
+                        if(!line.contains("project.compileClasspathElements")) {
+                            //LOGGER.debug("no project in");
+                            if(line.startsWith("[DEBUG]")) {
+                                line = line.substring("DEBUG]".length()+1).trim();
+                            }
+                            //LOGGER.debug("Line is ##"+line.substring(0, 50));
+                            line = line.substring(line.indexOf("[")+1);
+                            //LOGGER.debug("removes  before [: "+line.substring(0, 30)+"...");
+                            line = line.substring(0, line.length()-1);
+                            String[] entries = line.split(", ");
+                            LOGGER.debug("found "+entries.length+" entries");
+                            set.addAll(Arrays.asList(entries));
+                        }
+                    }
+                    line = reader.readLine();
+                }
+            } catch(IOException ex) {
+                LOGGER.error("while filtering classpath", ex);
+            }
+            List<String> ret = new ArrayList<>(set.size());
+            ret.addAll(set);
+            return ret;
+        }
         @Override
         protected void done() {
             try {
                 lblStatus.setText(get());
-            } catch(Exception ex) {
+            } catch(InterruptedException | ExecutionException ex) {
                 LOGGER.error(ex);
             }
         }
