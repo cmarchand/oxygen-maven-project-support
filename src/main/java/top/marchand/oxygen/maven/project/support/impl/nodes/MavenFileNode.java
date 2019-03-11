@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.tree.TreeNode;
 import org.apache.log4j.Logger;
 import ro.sync.exml.workspace.api.PluginWorkspaceProvider;

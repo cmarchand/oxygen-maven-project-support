@@ -27,16 +27,28 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 import javax.swing.JTree;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
@@ -46,6 +58,9 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.XPathCompiler;
+import net.sf.saxon.s9api.XPathSelector;
+import net.sf.saxon.s9api.XdmNode;
 import org.apache.log4j.Logger;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
@@ -56,6 +71,7 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.apache.maven.shared.invoker.PrintStreamHandler;
 import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 import ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace;
+import top.marchand.oxygen.maven.project.support.MavenOptionsPage;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
 
@@ -107,11 +123,22 @@ public class MavenProjectView extends javax.swing.JPanel {
                     localModel = new DefaultTreeModel(new EmptyTreeNode("Not a maven project"));
                     return null;
                 } else {
+                    MavenOptionsPage optionPage = MavenOptionsPage.INSTANCE;
                     MavenProjectExplorer explorer = new MavenProjectExplorer(projectDir.toPath(), proc);
                     AbstractMavenNode node = explorer.explore(chkShowTargetDirs.isSelected());
                     localModel = new DefaultTreeModel(node);
                     LOGGER.debug("creating DependencyScanner");
-                    return new DependencyScanner(pomFile.toPath());
+                    if("".equals(optionPage.getMavenInstallDir())) {
+                        JOptionPane.showMessageDialog(MavenProjectView.this, "Maven installation directory is not defined\nYou have to define it in preferences page.", "Maven not configured", JOptionPane.WARNING_MESSAGE);
+                        return null;
+                    }
+                    LOGGER.debug("Maven install dir: "+optionPage.getMavenInstallDir());
+                    LOGGER.debug("Local repository: "+optionPage.getMavenLocalRepositoryLocation());
+                    try {
+                        return new DependencyScanner(pomFile.toPath(), new File(new URI(optionPage.getMavenInstallDir())), optionPage.getMavenLocalRepositoryLocation());
+                    } catch(URISyntaxException ex) {
+                        return null;
+                    }
                 }
             }
 
@@ -302,19 +329,24 @@ public class MavenProjectView extends javax.swing.JPanel {
 
         private final Path pomFile;
         private String repositoryUrl=null;
-        protected DependencyScanner(Path pomFile) {
+        private final File mavenInstallDir;
+        private final File localRepository;
+        protected DependencyScanner(Path pomFile, File mavenInstallDir, File localRepository) {
             super();
             this.pomFile=pomFile;
+            this.mavenInstallDir=mavenInstallDir;
+            this.localRepository=localRepository;
         }
 
         @Override
         public String doInBackground() {
             LOGGER.info("Getting dependencies...");
-            lblStatus.setText("Deps..");
+            lblStatus.setText("Deps...");
             InvocationRequest request = new DefaultInvocationRequest();
             request.setPomFile(pomFile.toFile());
             request.setOffline(true);
-            request.setGoals(Arrays.asList("clean compile dependency:tree"));
+            request.setGoals(Arrays.asList("clean compile"));   // dependency:tree
+            // -B
             request.setBatchMode(true);
             // -e
             request.setShowErrors(true);
@@ -323,8 +355,8 @@ public class MavenProjectView extends javax.swing.JPanel {
             request.setMavenOpts("-Dmaven.test.skip=true");
 
             Invoker invoker = new DefaultInvoker();
-            File mavenHome = new File(new File(System.getProperty("user.home")), "applications/apache-maven-3.6.0");
-            invoker.setMavenHome(mavenHome);
+//            File mavenHome = new File(new File(System.getProperty("user.home")), "applications/apache-maven-3.6.0");
+            invoker.setMavenHome(mavenInstallDir);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(baos);
             PrintStreamHandler psh = new PrintStreamHandler(ps, false);
@@ -334,25 +366,45 @@ public class MavenProjectView extends javax.swing.JPanel {
             try {
                 InvocationResult result = invoker.execute(request);
                 ps.flush();
-                output = baos.toString("UTF-8");
-                LOGGER.info("Maven terminated");
+                if(result.getExitCode()==0) {
+                    output = baos.toString("UTF-8");
+                    LOGGER.info("Maven terminated");
+                } else {
+                    Exception ex = result.getExecutionException();
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    ex.printStackTrace(pw);
+                    JOptionPane.showMessageDialog(MavenProjectView.this, sw.toString(), ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+                }
             } catch(MavenInvocationException | UnsupportedEncodingException ex) {
-                LOGGER.error("while calling maven", ex);
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    ex.printStackTrace(pw);
+                    JOptionPane.showMessageDialog(MavenProjectView.this, sw.toString(), ex.getMessage(), JOptionPane.ERROR_MESSAGE);
             }
-            List<String> classpath = filterClasspath(output);
-            classpath.forEach((s) -> {
-                LOGGER.debug("Entry: "+s);
-            });
-            String filtered = filter(output);
-            untree(filtered).forEach((dep) -> {
-                LOGGER.debug(dep);
-            });
+            if(output.length()>0) {
+                List<String> classpath = filterClasspath(output);
+                Map<String,String> artifactsMapping = new HashMap<>();
+                classpath.forEach((s) -> {
+                    Map.Entry<String,String> entry = getArtifactMapping(s);
+                    if(entry!=null) {
+                        artifactsMapping.put(entry.getKey(), entry.getValue());
+                    }
+                });
+                for(Map.Entry entry: artifactsMapping.entrySet()) {
+                    LOGGER.debug(entry.getKey()+"="+entry.getValue());
+                }
+            }
+//            String filtered = filter(output);
+//            untree(filtered).forEach((dep) -> {
+//                LOGGER.debug(dep);
+//            });
             lblStatus.setText("");
             return "OK";
         }
-        private List<DependencyEntry> untree(final String input) {
+        private Collection<DependencyEntry> untree(final String input) {
             Pattern pattern = Pattern.compile("^[+-\\\\| ]*");
-            List<DependencyEntry> ret = new ArrayList<>();
+            Collection<DependencyEntry> ret = new HashSet<>();
             BufferedReader reader = new BufferedReader(new StringReader(input));
             try {
                 String line=reader.readLine();
@@ -414,7 +466,54 @@ public class MavenProjectView extends javax.swing.JPanel {
             }
             LOGGER.info("repository Url: "+repositoryUrl);
         }
-        
+        private Map.Entry<String,String> getArtifactMapping(String classpathEntry) {
+            File f = new File(classpathEntry);
+            if(f.isDirectory()) {
+                // is it a /target/classes entry ?
+                if(classpathEntry.endsWith("/target/classes")) {
+                    File pomFile = new File(f.getParentFile().getParentFile(),"pom.xml");
+                    try {
+                        XdmNode node = proc.newDocumentBuilder().build(pomFile);
+                        XPathCompiler comp = proc.newXPathCompiler();
+                        comp.declareNamespace("pom", "http://maven.apache.org/POM/4.0.0");
+                        XPathSelector sel = comp.compile("/pom:project/pom:artifactId/text()").load();
+                        sel.setContextItem(node);
+                        String artifactId = sel.evaluateSingle().getStringValue();
+                        sel = comp.compile("(/pom:project/pom:groupId/text(), /pom:project/pom:parent/pom:groupId/text())[1]").load();
+                        sel.setContextItem(node);
+                        String groupId = sel.evaluateSingle().getStringValue();
+                        String entry = "dependency:/"+groupId+"+"+artifactId;
+                        String path = classpathEntry.replaceAll("\\\\", "/");
+                        path = "file:"+(path.startsWith("/")?"":"/")+path;
+                        return new AbstractMap.SimpleEntry<String,String>(entry, path);
+                    } catch(Exception ex) {
+                        LOGGER.error(ex.getMessage(), ex);
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            } else if(classpathEntry.endsWith(".jar")) {
+                try {
+                    JarFile jar = new JarFile(f);
+                    for(Enumeration<JarEntry> enumer = jar.entries(); enumer.hasMoreElements();) {
+                        JarEntry entry = enumer.nextElement();
+                        if(entry.getName().endsWith("/pom.xml")) {
+                            String[] els = entry.getName().split("/");
+                            String entryName = "dependency:/"+els[2]+"+"+els[3];
+                            URL url = pluginWorkspaceAccess.getUtilAccess().convertFileToURL(f);
+                            return new AbstractMap.SimpleEntry<>(entryName, "zip:"+url.toString()+"!");
+                        }
+                    }
+                    return null;
+                } catch(IOException ex) {
+                    LOGGER.error("while extracting pom from "+f.getAbsolutePath(), ex);
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
         private String filter(final String input) {
             Pattern pattern = Pattern.compile("maven-dependency-plugin:[0-9]+\\.[0-9]+(\\.[0-9]+)?:tree");
             StringWriter sw = new StringWriter();
@@ -463,5 +562,22 @@ public class MavenProjectView extends javax.swing.JPanel {
         public String toString() {
             return artifactCoordinate+" ("+level+")";
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(obj instanceof DependencyEntry) {
+                DependencyEntry other = (DependencyEntry)obj;
+                return getArtifactCoordinate().equals(other.getArtifactCoordinate());
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 47 * hash + Objects.hashCode(this.artifactCoordinate);
+            return hash;
+        }
+        
     }
 }

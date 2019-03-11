@@ -13,6 +13,10 @@
       type="WorkspaceAccess" 
       class="top.marchand.oxygen.maven.project.support.MavenProjectViewExtension"
   />
+  <extension
+      type="OptionPage"
+      class="top.marchand.oxygen.maven.project.support.MavenOptionsPage"/>
+  />
   <runtime>
     <library name="maven-project-support-1.00.00-SNAPSHOT.jar"/>
   </runtime>

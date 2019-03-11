@@ -18,7 +18,6 @@ package top.marchand.oxygen.maven.project.support;
 import ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension;
 import ro.sync.exml.workspace.api.Platform;
 import ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace;
-import ro.sync.exml.workspace.api.standalone.ViewComponentCustomizer;
 import ro.sync.exml.workspace.api.standalone.ViewInfo;
 import top.marchand.oxygen.maven.project.support.impl.MavenProjectView;
 
@@ -28,18 +27,18 @@ import top.marchand.oxygen.maven.project.support.impl.MavenProjectView;
  */
 public class MavenProjectViewExtension implements WorkspaceAccessPluginExtension {
 
+    @Override
     public void applicationStarted(StandalonePluginWorkspace pluginWorkspaceAccess) {
         if(pluginWorkspaceAccess.getPlatform().equals(Platform.WEBAPP)) return;
-        pluginWorkspaceAccess.addViewComponentCustomizer(new ViewComponentCustomizer() {
-            public void customizeView(ViewInfo viewInfo) {
-                if("top.marchand.oxygen.maven.project.view".equals(viewInfo.getViewID())) {
-                    viewInfo.setComponent(new MavenProjectView(pluginWorkspaceAccess));
-                    viewInfo.setTitle("Maven Project");
-                }
+        pluginWorkspaceAccess.addViewComponentCustomizer((ViewInfo viewInfo) -> {
+            if("top.marchand.oxygen.maven.project.view".equals(viewInfo.getViewID())) {
+                viewInfo.setComponent(new MavenProjectView(pluginWorkspaceAccess));
+                viewInfo.setTitle("Maven Project");
             }
         });
     }
 
+    @Override
     public boolean applicationClosing() {
         return true;
     }

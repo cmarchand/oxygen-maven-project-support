@@ -15,9 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
-import java.util.Enumeration;
 import javax.swing.ImageIcon;
-import javax.swing.tree.TreeNode;
 
 /**
  *

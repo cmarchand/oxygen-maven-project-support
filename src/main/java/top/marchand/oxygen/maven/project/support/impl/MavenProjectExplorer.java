@@ -21,7 +21,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
@@ -155,6 +154,9 @@ public class MavenProjectExplorer {
                 }
                 MavenDirectoryNode node = (MavenDirectoryNode)stack.peek();
                 node.addPackageEntry(packageName, file);
+            } else if(isFileAcceptable(file) && relative.startsWith(SRC)) {
+                MavenDirectoryNode node = (MavenDirectoryNode)stack.peek();
+                node.appendChild(new MavenFileNode(file));
             }
             return FileVisitResult.CONTINUE;
         }
