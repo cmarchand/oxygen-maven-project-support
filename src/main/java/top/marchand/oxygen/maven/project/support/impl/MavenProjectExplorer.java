@@ -65,7 +65,7 @@ public class MavenProjectExplorer {
             Files.walkFileTree(directory, visitor);
             return visitor.getRootNode();
         } catch(IOException ex) {
-            // TODO
+            LOGGER.error("while exploring "+directory, ex);
         }
         return null;
     }
@@ -91,7 +91,7 @@ public class MavenProjectExplorer {
             if(root.equals(dir)) {
                 Path pom = dir.resolve("pom.xml");
                 MavenProjectNode node = new MavenProjectNode(getProjectName(pom.toFile()));
-                node.appendChild(new MavenFileNode(pom));
+                node.add(new MavenFileNode(pom));
                 rootNode = node;
                 return FileVisitResult.CONTINUE;
             } else if(isTraversable(relative)) {
@@ -101,9 +101,9 @@ public class MavenProjectExplorer {
                     MavenProjectExplorer explorer = new MavenProjectExplorer(dir, proc);
                     // TODO: refactor
                     if(stack.isEmpty()) {
-                        rootNode.appendChild(explorer.explore(includeTargetDirectory));
+                        rootNode.add(explorer.explore(includeTargetDirectory));
                     } else {
-                        stack.peek().appendChild(explorer.explore(includeTargetDirectory));
+                        stack.peek().add(explorer.explore(includeTargetDirectory));
                     }
                     return FileVisitResult.SKIP_SUBTREE;
                 } else {
@@ -111,9 +111,9 @@ public class MavenProjectExplorer {
                     if((relative.startsWith(SRC) && stack.size()<3) || !relative.startsWith(SRC)) {
                         MavenDirectoryNode node = new MavenDirectoryNode(dir);
                         if(stack.isEmpty()) {
-                            rootNode.appendChild(node);
+                            rootNode.add(node);
                         } else {
-                            stack.peek().appendChild(node);
+                            stack.peek().add(node);
                         }
                         stack.push(node);
                     }
@@ -156,7 +156,7 @@ public class MavenProjectExplorer {
                 node.addPackageEntry(packageName, file);
             } else if(isFileAcceptable(file) && relative.startsWith(SRC)) {
                 MavenDirectoryNode node = (MavenDirectoryNode)stack.peek();
-                node.appendChild(new MavenFileNode(file));
+                node.add(new MavenFileNode(file));
             }
             return FileVisitResult.CONTINUE;
         }

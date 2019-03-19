@@ -17,6 +17,9 @@
       type="OptionPage"
       class="top.marchand.oxygen.maven.project.support.MavenOptionsPage"/>
   />
+  <extension 
+      type="URLHandler"
+      class="top.marchand.oxygen.maven.project.support.MavenProjectPlugin"/>
   <runtime>
     <library name="maven-project-support-1.00.00-SNAPSHOT.jar"/>
   </runtime>

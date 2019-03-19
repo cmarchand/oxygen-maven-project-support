@@ -46,7 +46,7 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
 
     @Override
     public Icon getIcon() {
-        if(getParent()!=null && VALID_PARENT_DIRS.contains(getParent().getValue())) {
+        if(getParent()!=null && VALID_PARENT_DIRS.contains(getParent().toString())) {
             switch(getValue().toLowerCase()) {
 //                case "java": return ImageHandler.getInstance().get(ImageHandler.JAVA_ICON);
                 case "ant": return ImageHandler.getInstance().get(ImageHandler.ANT_ICON);
@@ -65,6 +65,7 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
                 case "nvdl": return ImageHandler.getInstance().get(ImageHandler.NVDL_ICON);
                 case "rnc": return ImageHandler.getInstance().get(ImageHandler.RNC_ICON);
                 case "grammars":
+                case "xsd":
                 case "rng": return ImageHandler.getInstance().get(ImageHandler.RNG_ICON);
                 case "sch": return ImageHandler.getInstance().get(ImageHandler.SCH_ICON);
                 case "sql": return ImageHandler.getInstance().get(ImageHandler.SQL_ICON);
@@ -90,9 +91,9 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
         if(pack==null) {
             pack = new MavenPackageNode(packageName);
             packages.put(packageName, pack);
-            appendChild(pack);
+            add(pack);
         }
-        pack.appendChild(new MavenFileNode(file));
+        pack.add(new MavenFileNode(file));
     }
 
 }

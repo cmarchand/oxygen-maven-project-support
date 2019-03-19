@@ -15,6 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
@@ -27,6 +28,8 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -48,16 +51,22 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.s9api.Processor;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmNode;
@@ -70,9 +79,13 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.apache.maven.shared.invoker.PrintStreamHandler;
 import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
+import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
 import ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace;
+import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributorCustomizer;
 import top.marchand.oxygen.maven.project.support.MavenOptionsPage;
+import top.marchand.oxygen.maven.project.support.MavenProjectPlugin;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.ImageHandler;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
 
 /**
@@ -109,6 +122,45 @@ public class MavenProjectView extends javax.swing.JPanel {
                     }
                 }
             }
+        });
+        pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
+            @Override
+            public void customizeTextPopUpMenu(JPopupMenu popUp, WSTextEditorPage textPage) {
+                LOGGER.debug("customizeTextPopupMenu");
+//                super.customizeTextPopUpMenu(popUp, textPage);
+//                LOGGER.debug("\tcarret position: "+textPage.getCaretOffset());
+                Class clazz = textPage.getClass();
+                if(textPage.getCaretOffset()<6) return;
+                try {
+                    Method mGetDocument = clazz.getMethod("getDocument", new Class[0]);
+                    Object ret = mGetDocument.invoke(textPage,new Object[0]);
+                    javax.swing.text.Document doc = (javax.swing.text.Document)ret;
+                    String before = doc.getText(textPage.getCaretOffset()-6, 6);
+                    String after = doc.getText(textPage.getCaretOffset(), 1);
+                    if("\"".equals(after) || "'".equals(after)) {
+                        if("href=\"".equals(before) || "href='".equals(before)) {
+                            popUp.insert(new AbstractAction("Dependency resource...", ImageHandler.getInstance().get(ImageHandler.MAVEN_ICON)) {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    DlgChooseDependencyResource dlg = new DlgChooseDependencyResource(SwingUtilities.getWindowAncestor(MavenProjectView.this));
+                                    String url = dlg.getDependencyUrl();
+                                    if(url!=null) {
+                                        try {
+                                            doc.insertString(textPage.getCaretOffset(), url, null);
+                                        } catch(BadLocationException ex) {
+                                            LOGGER.error("Inserting at wrong position:", ex);
+                                        }
+                                    }
+                                }
+                            }, 0);
+                            popUp.insert(new JPopupMenu.Separator(), 1);
+                        }
+                    }
+                } catch(IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | BadLocationException ex) {
+                    LOGGER.error("while invoking getDocument()", ex);
+                }
+            }
+            
         });
     }
     
@@ -391,9 +443,10 @@ public class MavenProjectView extends javax.swing.JPanel {
                         artifactsMapping.put(entry.getKey(), entry.getValue());
                     }
                 });
-                for(Map.Entry entry: artifactsMapping.entrySet()) {
-                    LOGGER.debug(entry.getKey()+"="+entry.getValue());
-                }
+//                for(Map.Entry entry: artifactsMapping.entrySet()) {
+//                    LOGGER.debug(entry.getKey()+"="+entry.getValue());
+//                }
+                MavenProjectPlugin.getInstance().setDependenciesMapping(artifactsMapping);
             }
 //            String filtered = filter(output);
 //            untree(filtered).forEach((dep) -> {
@@ -484,9 +537,9 @@ public class MavenProjectView extends javax.swing.JPanel {
                         String groupId = sel.evaluateSingle().getStringValue();
                         String entry = "dependency:/"+groupId+"+"+artifactId;
                         String path = classpathEntry.replaceAll("\\\\", "/");
-                        path = "file:"+(path.startsWith("/")?"":"/")+path;
-                        return new AbstractMap.SimpleEntry<String,String>(entry, path);
-                    } catch(Exception ex) {
+                        path = "file:"+(path.startsWith("/")?"":"/")+path+"/";
+                        return new AbstractMap.SimpleEntry<>(entry, path);
+                    } catch(SaxonApiException ex) {
                         LOGGER.error(ex.getMessage(), ex);
                         return null;
                     }
@@ -502,7 +555,7 @@ public class MavenProjectView extends javax.swing.JPanel {
                             String[] els = entry.getName().split("/");
                             String entryName = "dependency:/"+els[2]+"+"+els[3];
                             URL url = pluginWorkspaceAccess.getUtilAccess().convertFileToURL(f);
-                            return new AbstractMap.SimpleEntry<>(entryName, "zip:"+url.toString()+"!");
+                            return new AbstractMap.SimpleEntry<>(entryName, "zip:"+url.toString()+"!/");
                         }
                     }
                     return null;

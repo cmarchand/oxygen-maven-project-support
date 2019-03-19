@@ -15,9 +15,12 @@
  */
 package top.marchand.oxygen.maven.project.support;
 
-import java.util.List;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import ro.sync.exml.plugin.PluginDescriptor;
-import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
+import top.marchand.oxygen.maven.project.support.impl.DependencyStreamHandler;
 
 
 
@@ -28,13 +31,15 @@ import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
     private static MavenProjectPlugin INSTANCE;
     private final PluginDescriptor pluginDescriptor;
-    private List<Object> dependencies;
+//    private List<Object> dependencies;
+    private final Map<String,String> mapping;
     
     public MavenProjectPlugin(PluginDescriptor descriptor) {
         super(descriptor);
         if(INSTANCE!=null) throw new IllegalAccessError("MaveProjectPlugin has already been constructed");
         INSTANCE=this;
         this.pluginDescriptor = descriptor;
+        mapping = new HashMap<>();
     }
     
     public static MavenProjectPlugin getInstance() {
@@ -46,9 +51,35 @@ public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
         return pluginDescriptor;
     }
     
-    public void updateDependencies() {
-        String projectDirectory = PluginWorkspaceProvider.getPluginWorkspace().getUtilAccess().expandEditorVariables("${pd}", null);
-        
+    public void setDependenciesMapping(Map<String,String> mapping) {
+        this.mapping.clear();
+        this.mapping.putAll(mapping);
     }
     
+    /**
+     * Returns a copy, to ensure nothing will be modified outside.
+     * @return 
+     */
+    public Map<String,String> getDependenciesMapping() {
+        HashMap<String,String> ret = new HashMap<>(mapping.size());
+        ret.putAll(mapping);
+        return ret;
+    }
+    
+    public URL resolveDependencyUrl(URL u) {
+        String sUrl = u.toString();
+        String entry = getDependencyPrefix(sUrl);
+        String then = sUrl.substring(entry.length()+1);
+        String resolvedPrefix = mapping.get(entry);
+        if(resolvedPrefix==null) return null;
+        try {
+            return new URL(resolvedPrefix+then);
+        } catch(MalformedURLException ex) {
+            return null;
+        }
+    }
+    protected String getDependencyPrefix(String url) {
+        int secondSlashPos = url.indexOf("/", DependencyStreamHandler.DEPENDENCY_PROTOCOL.length()+1);
+        return url.substring(0, secondSlashPos);
+    }
 }

@@ -5,65 +5,32 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.List;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
 
 /**
  *
  * @author cmarchand
  */
 public abstract class AbstractMavenParentNode extends AbstractMavenNode {
-    private List<AbstractMavenNode> children;
-    private final Comparator<AbstractMavenNode> comp;
-
-    public void appendChild(AbstractMavenNode child) {
-        children.add(child);
-        Collections.sort(children, comp);
-        child.setParent(this);
-    }
+    private final Comparator<MutableTreeNode> comp;
 
     public AbstractMavenParentNode() {
         super();
-        children = new ArrayList<>();
-        comp = (AbstractMavenNode o1, AbstractMavenNode o2) -> {
-            if(o1 instanceof AbstractMavenParentNode && o2 instanceof AbstractMavenParentNode) return o1.getValue().compareTo(o2.getValue());
-            else if(o1 instanceof MavenFileNode && o2 instanceof MavenFileNode) return o1.getValue().compareTo(o2.getValue());
+        comp = (MutableTreeNode o1, MutableTreeNode o2) -> {
+            if(o1 instanceof AbstractMavenParentNode && o2 instanceof AbstractMavenParentNode) return o1.toString().compareTo(o2.toString());
+            else if(o1.getClass().equals(o2.getClass())) return o1.toString().compareTo(o2.toString());
             else if(o1 instanceof AbstractMavenParentNode) return -1;
             else return 1;
         };
     }
-    @Override
-    public TreeNode getChildAt(int childIndex) {
-        return children.get(childIndex);
-    }
 
     @Override
-    public int getChildCount() {
-        return children.size();
+    public void add(MutableTreeNode newChild) {
+        super.add(newChild);
+        Collections.sort(children, comp);
     }
-
-    @Override
-    public int getIndex(TreeNode node) {
-        return children.indexOf(node);
-    }
-
-    @Override
-    public boolean getAllowsChildren() {
-        return true;
-    }
-
-    @Override
-    public boolean isLeaf() {
-        return getChildCount()==0;
-    }
-
-    @Override
-    public Enumeration children() {
-        return Collections.enumeration(children);
-    }
-
+    
+    
 }

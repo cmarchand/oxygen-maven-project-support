@@ -30,7 +30,6 @@ import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
  * @author cmarchand
  */
 public class MavenFileNode extends AbstractMavenNode {
-    private static final Logger LOGGER = Logger.getLogger(MavenFileNode.class);
     private final Path file;
     private final String fileName;
     private final URL fileUrl;

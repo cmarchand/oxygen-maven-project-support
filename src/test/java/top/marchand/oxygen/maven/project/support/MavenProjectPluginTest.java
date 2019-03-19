@@ -15,10 +15,19 @@
  */
 package top.marchand.oxygen.maven.project.support;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
 /**
  *
  * @author cmarchand
  */
-public class DependencyHandler {
+public class MavenProjectPluginTest {
+    
+    @Test
+    public void getDependencyPrefixTest() {
+        MavenProjectPlugin plugin = new MavenProjectPlugin(null);
+        String url = "dependency:/eu.els.sie.mcqueen.publication.common.libraries+treatment/eu/els/sie/mcqueen/publication/common/treatment/xsl/info.xsl";
+        assertEquals("dependency:/eu.els.sie.mcqueen.publication.common.libraries+treatment", MavenProjectPlugin.getInstance().getDependencyPrefix(url));
+    }
     
 }
