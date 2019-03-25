@@ -19,9 +19,13 @@
   />
   <extension 
       type="URLHandler"
-      class="top.marchand.oxygen.maven.project.support.MavenProjectPlugin"/>
+      class="top.marchand.oxygen.maven.project.support.DependencyProtocolHandlerExtension"/>
   <runtime>
-    <library name="maven-project-support-1.00.00-SNAPSHOT.jar"/>
+    <library name="lib/${project.build.finalName}.jar"/>
+    <!-- from dependencies -->
+    <library name="lib/plexus-component-annotations-1.7.1.jar"/>
+    <library name="lib/maven-invoker-3.0.1.jar"/>
+    <library name="lib/maven-shared-utils-3.2.1.jar"/>
   </runtime>
   <view 
       id="top.marchand.oxygen.maven.project.view" 

@@ -16,21 +16,18 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="lblMavenDir" alignment="0" min="-2" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="dfMavenInstallDir" pref="268" max="32767" attributes="0"/>
-                  <Component id="dfLocalRepoLocation" max="32767" attributes="0"/>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="pbChooseRepo" min="-2" pref="48" max="-2" attributes="0"/>
-                  <Component id="pbChooseDir" min="-2" pref="46" max="-2" attributes="0"/>
+                  <Component id="lblReport" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Component id="lblMavenDir" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="25" max="-2" attributes="0"/>
+                      <Component id="dfMavenInstallDir" pref="272" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="pbChooseInstallDir" min="-2" pref="46" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -43,14 +40,10 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="lblMavenDir" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="dfMavenInstallDir" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="pbChooseDir" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="pbChooseInstallDir" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="dfLocalRepoLocation" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="pbChooseRepo" alignment="3" min="-2" max="-2" attributes="0"/>
-              </Group>
+              <Component id="lblReport" min="-2" pref="20" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
           </Group>
       </Group>
@@ -63,26 +56,20 @@
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="dfMavenInstallDir">
+      <Events>
+        <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="dfMavenInstallDirFocusGained"/>
+        <EventHandler event="propertyChange" listener="java.beans.PropertyChangeListener" parameters="java.beans.PropertyChangeEvent" handler="dfMavenInstallDirPropertyChange"/>
+      </Events>
     </Component>
-    <Component class="javax.swing.JButton" name="pbChooseDir">
+    <Component class="javax.swing.JButton" name="pbChooseInstallDir">
       <Properties>
         <Property name="text" type="java.lang.String" value="..."/>
       </Properties>
       <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="pbChooseDirActionPerformed"/>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="pbChooseInstallDirActionPerformed"/>
       </Events>
     </Component>
-    <Component class="javax.swing.JLabel" name="jLabel1">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Local repository location"/>
-      </Properties>
-    </Component>
-    <Component class="javax.swing.JTextField" name="dfLocalRepoLocation">
-    </Component>
-    <Component class="javax.swing.JButton" name="pbChooseRepo">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="..."/>
-      </Properties>
+    <Component class="javax.swing.JLabel" name="lblReport">
     </Component>
   </SubComponents>
 </Form>

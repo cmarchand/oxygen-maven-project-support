@@ -32,7 +32,6 @@ import top.marchand.oxygen.maven.project.support.impl.MavenOptionView;
 public class MavenOptionsPage extends OptionPagePluginExtension {
     public static final String OPTION_PREFIX = "top.marchand.maven";
     public static final String OPTION_INSTALL_DIR = OPTION_PREFIX+".install.dir";
-    public static final String OPTION_REPO_LOCATION = OPTION_PREFIX+".repo.location";
     public static final String DEFAULT_MAVEN_INSTALL_DIR = "";
     public static final String DEFAULT_REPO_LOCATION = "${home}/.m2/repository/";
     public static MavenOptionsPage INSTANCE;
@@ -50,13 +49,11 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
     @Override
     public void apply(PluginWorkspace pluginWorkspace) {
         pluginWorkspace.getOptionsStorage().setOption(OPTION_INSTALL_DIR, view.getMavenInstallDir());
-        pluginWorkspace.getOptionsStorage().setOption(OPTION_REPO_LOCATION, view.getLocalRepositorLocation());
     }
 
     @Override
     public void restoreDefaults() {
         view.setMavenInstallDir(DEFAULT_MAVEN_INSTALL_DIR);
-        view.setLocalRepositoryLocation(DEFAULT_REPO_LOCATION);
     }
 
     @Override
@@ -70,7 +67,6 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
             view = new MavenOptionView(pluginWorkspace);
         }
         view.setMavenInstallDir(pluginWorkspace.getOptionsStorage().getOption(OPTION_INSTALL_DIR, DEFAULT_MAVEN_INSTALL_DIR));
-        view.setLocalRepositoryLocation(pluginWorkspace.getOptionsStorage().getOption(OPTION_REPO_LOCATION, DEFAULT_REPO_LOCATION));
         return view;
     }
 
@@ -81,20 +77,6 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
     public String getMavenInstallDir() {
         return expand(PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().getOption(OPTION_INSTALL_DIR, ""));
     }
-    /**
-     * Returns Maven Local repository location, as configured in options
-     * @return Local repository location
-     */
-    public File getMavenLocalRepositoryLocation() {
-        try {
-            return new File(new URI(expand(PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().getOption(OPTION_REPO_LOCATION, "${home}/.m2/repository/"))));
-        } catch(URISyntaxException ex) {
-            LOGGER.error("while getting local repository", ex);
-            // should never happen
-            return null;
-        }
-    }
-    
     
     private String expand(String s) {
         return PluginWorkspaceProvider.getPluginWorkspace().getUtilAccess().expandEditorVariables(s, null);

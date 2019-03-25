@@ -28,7 +28,15 @@ public abstract class AbstractMavenParentNode extends AbstractMavenNode {
 
     @Override
     public void add(MutableTreeNode newChild) {
+        addNoSort(newChild);
+        sortNodes();
+    }
+    
+    public void addNoSort(MutableTreeNode newChild) {
         super.add(newChild);
+    }
+    
+    public void sortNodes() {
         Collections.sort(children, comp);
     }
     

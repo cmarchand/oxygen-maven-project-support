@@ -1,15 +1,15 @@
 <component>
-	<files>
-		<file>
-			<source>${project.build.directory}/build/${project.build.finalName}.jar</source>
-			<outputDirectory>/lib</outputDirectory>
-		</file>
-		<file>
-			<source>${project.basedir}/src/main/external-resources/plugin.xml</source>
-			<outputDirectory>/</outputDirectory>
-			<filtered>true</filtered>
-		</file>
-		<!--<file>
+  <files>
+    <file>
+      <source>${project.build.directory}/build/${project.build.finalName}.jar</source>
+      <outputDirectory>lib</outputDirectory>
+    </file>
+    <file>
+      <source>${project.basedir}/src/main/external-resources/plugin.xml</source>
+      <!--<outputDirectory>/</outputDirectory>-->
+      <filtered>true</filtered>
+    </file>
+    <!--<file>
 			<source>README.html</source>
 			<outputDirectory>/</outputDirectory>
 		</file>
@@ -18,22 +18,23 @@
 			<outputDirectory>/</outputDirectory>
 			<filtered>true</filtered>
 		</file>-->
-	</files>
+  </files>
 
 
-	<!-- In case one of your plugins needs to package its dependencies, use a section like the one below. -->
-	<!-- 
-	<dependencySets>
-	    <dependencySet>
-	        <unpack>false</unpack>
-	        <scope>runtime</scope>
-	        <outputDirectory>/lib</outputDirectory>
-	        <useProjectArtifact>false</useProjectArtifact>
-	        <includes>
-	            <include>com.comp:library-1</include>
-	            <include>com.comp:library-2</include>	            
-	        </includes>
-	    </dependencySet>
-	</dependencySets>	
-	 -->
+  <!-- In case one of your plugins needs to package its dependencies, use a section like the one below. -->
+
+  <dependencySets>
+    <dependencySet>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <outputDirectory>/lib</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <includes>
+        <include>org.apache.maven.shared:maven-invoker</include>
+        <include>org.apache.maven.shared:maven-shared-utils</include>
+        <include>org.codehaus.plexus:plexus-component-annotations</include>
+      </includes>
+    </dependencySet>
+  </dependencySets>
+
 </component>

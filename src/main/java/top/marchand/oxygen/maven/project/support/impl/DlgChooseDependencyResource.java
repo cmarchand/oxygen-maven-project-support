@@ -16,6 +16,8 @@
 package top.marchand.oxygen.maven.project.support.impl;
 
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -27,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +38,14 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.swing.AbstractAction;
 import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.MutableTreeNode;
@@ -44,7 +53,9 @@ import javax.swing.tree.TreePath;
 import org.apache.log4j.Logger;
 import top.marchand.oxygen.maven.project.support.MavenProjectPlugin;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenParentNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.HasIcon;
 import top.marchand.oxygen.maven.project.support.impl.nodes.HasValue;
+import top.marchand.oxygen.maven.project.support.impl.nodes.ImageHandler;
 import top.marchand.oxygen.maven.project.support.impl.nodes.LazyLoadingTreeNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenPackageNode;
@@ -54,32 +65,22 @@ import top.marchand.oxygen.maven.project.support.impl.nodes.MavenPackageNode;
  * @author cmarchand
  */
 public class DlgChooseDependencyResource extends javax.swing.JDialog {
-//    private TreeModel model;
     private static final Logger LOGGER = Logger.getLogger(DlgChooseDependencyResource.class);
     private String result;
-    private DefaultTreeModel treeModel;
+    private FilteredTreeModel treeModel;
+    private AbstractAction cancelAction = null, okAction = null;
 
-    /**
-     * Creates new form DlgChooseDependencyResource
-     * @param parent
-     */
-    public DlgChooseDependencyResource(java.awt.Frame parent) {
-        super(parent, true);
-        setTitle("Dependency resources...");
-        _initComponents();
-        loadModel();
-    }
 
     public DlgChooseDependencyResource(Window owner) {
         super(owner, ModalityType.APPLICATION_MODAL);
-        setTitle("Dependency resources...");
         _initComponents();
-        setLocationRelativeTo(getParent());
         loadModel();
     }
     
     private void _initComponents() {
+        setTitle("Dependency resources...");
         initComponents();
+        tree.setCellRenderer(new MavenTreeCellRenderer());
         tree.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
             public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
@@ -92,6 +93,7 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
             @Override
             public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException { }
         });
+        setLocationRelativeTo(getParent());
     }
     
     public String getDependencyUrl() {
@@ -106,7 +108,12 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
         map.keySet().forEach((key) -> {
             root.add(new DependencyNode(key, map.get(key)));
         });
-        treeModel = new DefaultTreeModel(root);
+        treeModel = new FilteredTreeModel(root) {
+            @Override
+            public DefaultMutableTreeNode createRootNode() {
+                return new RootDependenciesNode("Dependencies");
+            }
+        };
         tree.setModel(treeModel);
     }
 
@@ -130,6 +137,12 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
 
         jLabel1.setText("Filter");
 
+        dfFilter.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                dfFilterKeyTyped(evt);
+            }
+        });
+
         pbOk.setText("Ok");
         pbOk.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -144,6 +157,8 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
             }
         });
 
+        tree.setRootVisible(false);
+        tree.setShowsRootHandles(true);
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 treeMouseClicked(evt);
@@ -194,12 +209,9 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
         if(tree.getSelectionPath()!=null) {
             Object o = tree.getSelectionPath().getLastPathComponent();
             if(o instanceof MavenFileNode) {
-//                LOGGER.debug("selected node is a MavenFileNode");
                 MavenFileNode mfn = (MavenFileNode)o;
                 MavenPackageNode mpn = (MavenPackageNode)mfn.getParent();
-//                LOGGER.debug("mpn is "+(mpn==null ? "":"not ")+"null");
                 DependencyNode dn = (DependencyNode)mpn.getParent();
-//                LOGGER.debug("dn is "+(dn==null ? "":"not ")+"null");
                 result = "dependency:/"+dn.getValue()+"/"+mpn.getValue().replaceAll("\\.", "/")+"/"+mfn.getValue();
                 setVisible(false);
             } else {
@@ -208,6 +220,27 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
         } else {
             LOGGER.warn("getSelectionPath is null");
         }
+    }
+    @Override
+    
+    protected JRootPane createRootPane() {
+        cancelAction = new AbstractAction("Annuler") {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                setVisible(false);
+            }
+        };
+        okAction = new AbstractAction("Ok") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                okPressed();
+            }
+        };
+        KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE,0);
+        JRootPane rp = new JRootPane();
+        rp.registerKeyboardAction(cancelAction, "CANCEL", ks, JComponent.WHEN_IN_FOCUSED_WINDOW);
+        rp.registerKeyboardAction(okAction, "OK", KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        return rp;
     }
     private void pbOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pbOkActionPerformed
         okPressed();
@@ -225,6 +258,10 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
             }
         }
     }//GEN-LAST:event_treeMouseClicked
+
+    private void dfFilterKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_dfFilterKeyTyped
+        treeModel.filter(dfFilter.getText());
+    }//GEN-LAST:event_dfFilterKeyTyped
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -255,13 +292,30 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
         }
     }
     
-    private class DependencyNode extends LazyLoadingTreeNode implements HasValue {
+    private class DependencyNode extends LazyLoadingTreeNode implements HasValue, HasIcon {
         private final String label;
         private final String url;
+        private final Comparator<MutableTreeNode> comp;
         public DependencyNode(String id, String url) {
             super(url);
             label = id.substring("dependency:/".length());
             this.url=url;
+            comp = (MutableTreeNode o1, MutableTreeNode o2) -> {
+                if(o1 instanceof AbstractMavenParentNode && o2 instanceof AbstractMavenParentNode) return o1.toString().compareTo(o2.toString());
+                else if(o1.getClass().equals(o2.getClass())) return o1.toString().compareTo(o2.toString());
+                else if(o1 instanceof AbstractMavenParentNode) return -1;
+                else return 1;
+            };
+        }
+
+        @Override
+        public void add(MutableTreeNode newChild) {
+            super.add(newChild);
+            sortNodes();
+        }
+        
+        public void sortNodes() {
+            Collections.sort(children, comp);
         }
 
         private void loadChildrenFileProtocol(List<MutableTreeNode> ret) {
@@ -336,11 +390,14 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
                             mp = new MavenPackageNode(packageName);
                             packages.put(packageName, mp);
                         }
-                        mp.add(new MavenFileNode(Paths.get(fileName)));
+                        mp.addNoSort(new MavenFileNode(Paths.get(fileName)));
                     }
                 }
                 packages.values().forEach((mpn) -> {
-                    if(mpn.getChildCount()>0) ret.add(mpn);
+                    if(mpn.getChildCount()>0) {
+                        ret.add(mpn);
+                        mpn.sortNodes();
+                    }
                 });
             } catch(IOException | URISyntaxException ex) {
                 LOGGER.error("while loading resources from "+url, ex);
@@ -360,11 +417,25 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
         public String toString() {
             return getValue();
         }
-
         @Override
         public String getValue() {
             return label;
         }
+        @Override
+        public Icon getIcon() {
+            return ImageHandler.getInstance().get(ImageHandler.MAVEN_ICON);
+        }
+
+        @Override
+        public Object clone() {
+            DependencyNode ret = (DependencyNode)super.clone();
+            for(Enumeration<MutableTreeNode> enumer=children();enumer.hasMoreElements();) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode)enumer.nextElement();
+                ret.add((MutableTreeNode)child.clone());
+            }
+            return ret;
+        }
+        
     }
 
     

@@ -37,11 +37,9 @@ import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,8 +47,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
@@ -58,7 +54,6 @@ import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
-import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
@@ -185,9 +180,10 @@ public class MavenProjectView extends javax.swing.JPanel {
                         return null;
                     }
                     LOGGER.debug("Maven install dir: "+optionPage.getMavenInstallDir());
-                    LOGGER.debug("Local repository: "+optionPage.getMavenLocalRepositoryLocation());
                     try {
-                        return new DependencyScanner(pomFile.toPath(), new File(new URI(optionPage.getMavenInstallDir())), optionPage.getMavenLocalRepositoryLocation());
+                        return new DependencyScanner(
+                                pomFile.toPath(), 
+                                new File(new URI(optionPage.getMavenInstallDir())));
                     } catch(URISyntaxException ex) {
                         return null;
                     }
@@ -382,12 +378,12 @@ public class MavenProjectView extends javax.swing.JPanel {
         private final Path pomFile;
         private String repositoryUrl=null;
         private final File mavenInstallDir;
-        private final File localRepository;
-        protected DependencyScanner(Path pomFile, File mavenInstallDir, File localRepository) {
+//        private final File localRepository;
+        protected DependencyScanner(Path pomFile, File mavenInstallDir/*, File localRepository*/) {
             super();
             this.pomFile=pomFile;
             this.mavenInstallDir=mavenInstallDir;
-            this.localRepository=localRepository;
+//            this.localRepository=localRepository;
         }
 
         @Override
@@ -443,41 +439,10 @@ public class MavenProjectView extends javax.swing.JPanel {
                         artifactsMapping.put(entry.getKey(), entry.getValue());
                     }
                 });
-//                for(Map.Entry entry: artifactsMapping.entrySet()) {
-//                    LOGGER.debug(entry.getKey()+"="+entry.getValue());
-//                }
                 MavenProjectPlugin.getInstance().setDependenciesMapping(artifactsMapping);
             }
-//            String filtered = filter(output);
-//            untree(filtered).forEach((dep) -> {
-//                LOGGER.debug(dep);
-//            });
             lblStatus.setText("");
             return "OK";
-        }
-        private Collection<DependencyEntry> untree(final String input) {
-            Pattern pattern = Pattern.compile("^[+-\\\\| ]*");
-            Collection<DependencyEntry> ret = new HashSet<>();
-            BufferedReader reader = new BufferedReader(new StringReader(input));
-            try {
-                String line=reader.readLine();
-                while(line!=null) {
-                    if(line.startsWith("[INFO] ")) {
-                        line = line.substring(7);
-                    }
-                    if(line.trim().length()==0) continue;
-                    Matcher m = pattern.matcher(line);
-                    if(m.find()) {
-                        String prefix = m.group();
-                        DependencyEntry dep = new DependencyEntry((prefix.length() / 3),line.substring(prefix.length()));
-                        ret.add(dep);
-                    }
-                    line = reader.readLine();
-                }
-            } catch(IOException ex) {
-                LOGGER.error("while processing tree", ex);
-            }
-            return ret;
         }
         private List<String> filterClasspath(final String input) {
             TreeSet<String> set = new TreeSet<>();
@@ -566,38 +531,6 @@ public class MavenProjectView extends javax.swing.JPanel {
             } else {
                 return null;
             }
-        }
-        private String filter(final String input) {
-            Pattern pattern = Pattern.compile("maven-dependency-plugin:[0-9]+\\.[0-9]+(\\.[0-9]+)?:tree");
-            StringWriter sw = new StringWriter();
-            try (PrintWriter writer = new PrintWriter(sw)) {
-                BufferedReader reader = new BufferedReader(new StringReader(input));
-                try {
-                    String line = reader.readLine();
-                    boolean inTree = false;
-                    while(line!=null) {
-                        if(!inTree) {
-                            Matcher m = pattern.matcher(line);
-                            if(m.find()) {
-                                inTree = true;
-                            }
-                        } else if(inTree && ("[INFO]".equals(line.trim()) || line.startsWith("[INFO] ---------------------"))) {
-                            inTree = false;
-                        } else if(inTree) {
-                            if(line.startsWith("[INFO]")) {
-                                writer.println(line);
-                            } else if(line.startsWith("      url:") && repositoryUrl==null) {
-                                repositoryUrl = line.substring("      url:".length());
-                            }
-                        }
-                        line = reader.readLine();
-                    }
-                } catch(IOException ex) {
-                    LOGGER.error("while filtering output", ex);
-                }
-                writer.flush();
-            }
-            return sw.toString();
         }
     }
 

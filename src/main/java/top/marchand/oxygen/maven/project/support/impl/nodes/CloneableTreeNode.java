@@ -15,22 +15,10 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-
 /**
  *
  * @author cmarchand
  */
-public abstract class AbstractMavenNode extends DefaultMutableTreeNode implements Comparable<AbstractMavenNode>, HasValue, HasIcon, CloneableTreeNode {
-    
-    @Override
-    public String toString() {
-        return getValue();
-    }
-
-    @Override
-    public int compareTo(AbstractMavenNode o) {
-        return getValue().compareTo(o.getValue());
-    }   
+public interface CloneableTreeNode extends Cloneable {
     
 }

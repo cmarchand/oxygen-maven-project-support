@@ -89,6 +89,7 @@ public class MavenProjectExplorer {
             Path relative = root.relativize(dir);
 //            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
             if(root.equals(dir)) {
+                LOGGER.debug("starting maven project at "+dir.toString());
                 Path pom = dir.resolve("pom.xml");
                 MavenProjectNode node = new MavenProjectNode(getProjectName(pom.toFile()));
                 node.add(new MavenFileNode(pom));
@@ -97,16 +98,32 @@ public class MavenProjectExplorer {
             } else if(isTraversable(relative)) {
                 Path pom = dir.resolve("pom.xml");
                 if(Files.isRegularFile(pom)) {
+                    LOGGER.debug("found sub-maven project at "+dir.toString());
                     // This is a maven project, run a new explorer...
-                    MavenProjectExplorer explorer = new MavenProjectExplorer(dir, proc);
-                    // TODO: refactor
-                    if(stack.isEmpty()) {
-                        rootNode.add(explorer.explore(includeTargetDirectory));
-                    } else {
-                        stack.peek().add(explorer.explore(includeTargetDirectory));
+                    try {
+                        MavenProjectExplorer explorer = new MavenProjectExplorer(dir, proc);
+                        // TODO: refactor
+                        if(stack.isEmpty()) {
+                            rootNode.add(explorer.explore(includeTargetDirectory));
+                        } else {
+                            stack.peek().add(explorer.explore(includeTargetDirectory));
+                        }
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } catch(RuntimeException ex) {
+                        // there are cases where it's not a valid maven project, fallback
+                        if((relative.startsWith(SRC) && stack.size()<3) || !relative.startsWith(SRC)) {
+                            MavenDirectoryNode node = new MavenDirectoryNode(dir);
+                            if(stack.isEmpty()) {
+                                rootNode.add(node);
+                            } else {
+                                stack.peek().add(node);
+                            }
+                            stack.push(node);
+                        }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.SKIP_SUBTREE;
                 } else {
+                    LOGGER.debug("found normal sub-dir at "+dir.toString());
                     // Normal directory
                     if((relative.startsWith(SRC) && stack.size()<3) || !relative.startsWith(SRC)) {
                         MavenDirectoryNode node = new MavenDirectoryNode(dir);
@@ -180,6 +197,7 @@ public class MavenProjectExplorer {
     }
     
     protected String getProjectName(File pomFile) {
+        LOGGER.debug("getting project name from "+pomFile.getAbsolutePath());
         try {
             return getProjectName(parsePomFile(pomFile));
         } catch(SaxonApiException ex) {

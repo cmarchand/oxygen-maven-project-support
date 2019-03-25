@@ -15,22 +15,16 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
-import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.Icon;
 
 /**
  *
  * @author cmarchand
  */
-public abstract class AbstractMavenNode extends DefaultMutableTreeNode implements Comparable<AbstractMavenNode>, HasValue, HasIcon, CloneableTreeNode {
-    
-    @Override
-    public String toString() {
-        return getValue();
-    }
-
-    @Override
-    public int compareTo(AbstractMavenNode o) {
-        return getValue().compareTo(o.getValue());
-    }   
-    
+public interface HasIcon {
+    /**
+     * Returns the icon to display when displying the component
+     * @return 
+     */
+    public Icon getIcon();
 }

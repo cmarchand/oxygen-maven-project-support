@@ -20,20 +20,20 @@ import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import org.apache.log4j.Logger;
-import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.HasIcon;
 
 /**
  *
  * @author cmarchand
  */
-public class MavenTreeCellRenderer extends DefaultTreeCellRenderer   {
+public class MavenTreeCellRenderer extends DefaultTreeCellRenderer {
     private static final Logger LOGGER = Logger.getLogger(MavenTreeCellRenderer.class);
 
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         Component ret = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-        if(value instanceof AbstractMavenNode) {
-            Icon icon = ((AbstractMavenNode) value).getIcon();
+        if(value instanceof HasIcon) {
+            Icon icon = ((HasIcon) value).getIcon();
             if(icon!=null) {
                 setIcon(icon);
             }

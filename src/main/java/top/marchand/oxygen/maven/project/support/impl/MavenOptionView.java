@@ -15,6 +15,11 @@
  */
 package top.marchand.oxygen.maven.project.support.impl;
 
+import java.awt.Color;
+import java.net.URI;
+import javax.swing.JFileChooser;
+import javax.swing.JTextField;
+import javax.swing.UIManager;
 import ro.sync.exml.workspace.api.PluginWorkspace;
 
 /**
@@ -24,6 +29,7 @@ import ro.sync.exml.workspace.api.PluginWorkspace;
 public class MavenOptionView extends javax.swing.JPanel {
 
     private final PluginWorkspace pluginWorkspace;
+    private String installDirReport, localRepoDir;
     
     public MavenOptionView(PluginWorkspace pluginWorkspace) {
         super();
@@ -35,18 +41,10 @@ public class MavenOptionView extends javax.swing.JPanel {
         dfMavenInstallDir.setText(location);
     }
     
-    public void setLocalRepositoryLocation(String location) {
-        dfLocalRepoLocation.setText(location);
-    }
-    
     public String getMavenInstallDir() {
         return dfMavenInstallDir.getText();
     }
     
-    public String getLocalRepositorLocation() {
-        return dfLocalRepoLocation.getText();
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -58,23 +56,28 @@ public class MavenOptionView extends javax.swing.JPanel {
 
         lblMavenDir = new javax.swing.JLabel();
         dfMavenInstallDir = new javax.swing.JTextField();
-        pbChooseDir = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        dfLocalRepoLocation = new javax.swing.JTextField();
-        pbChooseRepo = new javax.swing.JButton();
+        pbChooseInstallDir = new javax.swing.JButton();
+        lblReport = new javax.swing.JLabel();
 
         lblMavenDir.setText("Maven install directory");
 
-        pbChooseDir.setText("...");
-        pbChooseDir.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                pbChooseDirActionPerformed(evt);
+        dfMavenInstallDir.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                dfMavenInstallDirFocusGained(evt);
+            }
+        });
+        dfMavenInstallDir.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                dfMavenInstallDirPropertyChange(evt);
             }
         });
 
-        jLabel1.setText("Local repository location");
-
-        pbChooseRepo.setText("...");
+        pbChooseInstallDir.setText("...");
+        pbChooseInstallDir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pbChooseInstallDirActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -83,16 +86,14 @@ public class MavenOptionView extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(lblMavenDir))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(dfMavenInstallDir, javax.swing.GroupLayout.DEFAULT_SIZE, 268, Short.MAX_VALUE)
-                    .addComponent(dfLocalRepoLocation))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pbChooseRepo, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pbChooseDir, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(lblReport, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(lblMavenDir)
+                        .addGap(25, 25, 25)
+                        .addComponent(dfMavenInstallDir, javax.swing.GroupLayout.DEFAULT_SIZE, 272, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(pbChooseInstallDir, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(2, 2, 2)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -102,27 +103,69 @@ public class MavenOptionView extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblMavenDir)
                     .addComponent(dfMavenInstallDir, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pbChooseDir))
+                    .addComponent(pbChooseInstallDir))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(dfLocalRepoLocation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pbChooseRepo))
+                .addComponent(lblReport, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void pbChooseDirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pbChooseDirActionPerformed
-        // TODO
-    }//GEN-LAST:event_pbChooseDirActionPerformed
+    private void pbChooseInstallDirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pbChooseInstallDirActionPerformed
+        String ret = getDirectory("Maven install directory");
+        if(ret!=null && !ret.isEmpty()) dfMavenInstallDir.setText(ret);
+    }//GEN-LAST:event_pbChooseInstallDirActionPerformed
 
+    private String getDirectory(String title) {
+        JFileChooser chooser = new JFileChooser(); 
+        chooser.setCurrentDirectory(new java.io.File("."));
+        chooser.setDialogTitle("Maven installation  directory");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        //
+        // disable the "All files" option.
+        //
+        chooser.setAcceptAllFileFilterUsed(false);
+        //    
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) { 
+            return chooser.getSelectedFile().toURI().toString();
+        } else {
+          return null;
+        }
+    }
+
+    private void dfMavenInstallDirPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_dfMavenInstallDirPropertyChange
+        try {
+            String text = pluginWorkspace.getUtilAccess().expandEditorVariables(dfMavenInstallDir.getText(), null);
+            if(text==null || text.isEmpty()) {
+                installDirReport = "Maven install directory must be defined";
+                setErrorMarker(dfMavenInstallDir, true);
+            } else {
+                URI uri = new URI(text);
+                setErrorMarker(dfMavenInstallDir, false);
+                installDirReport=text;
+                dfMavenInstallDirFocusGained(null);
+            }
+        } catch(Exception ex) {
+            installDirReport = ex.getLocalizedMessage();
+            setErrorMarker(dfMavenInstallDir, true);
+        }
+    }//GEN-LAST:event_dfMavenInstallDirPropertyChange
+
+    private void dfMavenInstallDirFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_dfMavenInstallDirFocusGained
+        lblReport.setText(installDirReport);
+    }//GEN-LAST:event_dfMavenInstallDirFocusGained
+
+    private void setErrorMarker(JTextField fld, boolean isError) {
+        if(isError) {
+            fld.setBackground(Color.red);
+        } else {
+            fld.setBackground(UIManager.getColor("TextField.background"));
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField dfLocalRepoLocation;
     private javax.swing.JTextField dfMavenInstallDir;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel lblMavenDir;
-    private javax.swing.JButton pbChooseDir;
-    private javax.swing.JButton pbChooseRepo;
+    private javax.swing.JLabel lblReport;
+    private javax.swing.JButton pbChooseInstallDir;
     // End of variables declaration//GEN-END:variables
 }
