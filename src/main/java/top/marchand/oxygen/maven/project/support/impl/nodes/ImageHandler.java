@@ -68,7 +68,7 @@ public class ImageHandler {
     /**
      * Returns the image denoted by its id. <tt>imageId</tt> must be a constant
      * defined in this class as <tt>*_ICON</tt>.
-     * @param imageId
+     * @param imageId The image identifier, one of *_ICON constants.
      * @return the image found, or <tt>null</tt> if not found.
      */
     public ImageIcon get(String imageId) {

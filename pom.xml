@@ -22,7 +22,7 @@
   
   <groupId>top.marchand.oxygen</groupId>
   <artifactId>maven-project-support</artifactId>
-  <version>1.00.00-SNAPSHOT</version>
+  <version>1.00.00</version>
   
   <name>Oxygen Maven Project Support</name>
   
@@ -37,6 +37,30 @@
     <mavenVersion>3.5.3</mavenVersion>
     <aetherVersion>1.1.0</aetherVersion>
   </properties>
+  
+  <developers>
+    <developer>
+      <name>Christophe Marchand</name>
+      <email>christophe@marchand.top</email>
+      <organization>Oxiane</organization>
+      <roles>
+        <role>Main developer</role>
+      </roles>
+    </developer>
+  </developers>
+  
+  <scm>
+    <developerConnection>scm:git:git@github.com:cmarchand/oxygen-maven-project-support.git</developerConnection>
+    <url>https://github.com/cmarchand/oxygen-maven-project-support</url>
+  </scm>
+  
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <build>
     <finalName>${project.artifactId}-${project.version}</finalName>
@@ -76,6 +100,20 @@
             <descriptor>src/assembly/assembly.xml</descriptor>
           </descriptors>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -153,6 +191,20 @@
                   </rules>
                   <fail>true</fail>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>

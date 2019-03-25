@@ -56,8 +56,8 @@ public class MavenProjectExplorer {
     
     /**
      * Constructs the project based on directory
-     * @param includeTargetDirectory
-     * @return 
+     * @param includeTargetDirectory If <tt>target/</tt> directory must be included
+     * @return A directory node, model of this maven directory
      */
     public AbstractMavenNode explore(boolean includeTargetDirectory) {
         try {

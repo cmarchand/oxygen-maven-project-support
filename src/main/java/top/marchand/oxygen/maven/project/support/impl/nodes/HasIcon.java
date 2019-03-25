@@ -24,7 +24,7 @@ import javax.swing.Icon;
 public interface HasIcon {
     /**
      * Returns the icon to display when displying the component
-     * @return 
+     * @return The icon to display
      */
     public Icon getIcon();
 }

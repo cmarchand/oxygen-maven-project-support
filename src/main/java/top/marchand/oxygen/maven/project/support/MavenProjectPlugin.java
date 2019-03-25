@@ -25,13 +25,12 @@ import top.marchand.oxygen.maven.project.support.impl.DependencyStreamHandler;
 
 
 /**
- *
+ * Main plugin class. Keep project dependencies.
  * @author cmarchand
  */
 public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
     private static MavenProjectPlugin INSTANCE;
     private final PluginDescriptor pluginDescriptor;
-//    private List<Object> dependencies;
     private final Map<String,String> mapping;
     
     public MavenProjectPlugin(PluginDescriptor descriptor) {
@@ -58,7 +57,7 @@ public class MavenProjectPlugin extends ro.sync.exml.plugin.Plugin {
     
     /**
      * Returns a copy, to ensure nothing will be modified outside.
-     * @return 
+     * @return All project dependencies, and their URL in classpath
      */
     public Map<String,String> getDependenciesMapping() {
         HashMap<String,String> ret = new HashMap<>(mapping.size());

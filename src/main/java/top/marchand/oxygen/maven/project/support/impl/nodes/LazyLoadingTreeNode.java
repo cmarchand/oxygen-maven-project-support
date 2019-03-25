@@ -41,16 +41,9 @@ public abstract class LazyLoadingTreeNode extends DefaultMutableTreeNode impleme
     
     /**
      * Call when children have to be load
-     * @return 
+     * @return All children of this node
      */
     public abstract List<MutableTreeNode> loadChildren();
-    
-    /*
-     * Factory method to construct a new child node
-     * @param userObject
-     * @return 
-     */
-//    public abstract MutableTreeNode createNewChild(T userObject);
     
     protected void setChildren(List<MutableTreeNode> childs) {
         removeAllChildren();
@@ -64,8 +57,8 @@ public abstract class LazyLoadingTreeNode extends DefaultMutableTreeNode impleme
     /**
      * Call when loading starts and end. By default, change cursor
      * from DEFAULT to WAIT, and reverse.
-     * @param view
-     * @param running 
+     * @param view The view to update
+     * @param running If the process is running ... or not
      */
     public void setRunning(JComponent view, boolean running) {
         if(running) {
@@ -75,6 +68,11 @@ public abstract class LazyLoadingTreeNode extends DefaultMutableTreeNode impleme
         }
     }
     
+    /**
+     * Loads children nodes, in a swing worker
+     * @param model The model to update
+     * @param view The view to update
+     */
     public void expandNode(final DefaultTreeModel model, final JComponent view) {
         if(loaded) return;
         SwingWorker<List<MutableTreeNode>, Void> worker = new SwingWorker<List<MutableTreeNode>, Void>() {
@@ -82,10 +80,6 @@ public abstract class LazyLoadingTreeNode extends DefaultMutableTreeNode impleme
             protected List<MutableTreeNode> doInBackground() throws Exception {
                 LOGGER.debug("expanding "+getValue());
                 setRunning(view, true);
-//                List<MutableTreeNode> ret = new ArrayList<>();
-//                ret.stream().forEachOrdered((node) -> {
-//                    ret.add(node);
-//                });
                 return loadChildren();
             }
             @Override
