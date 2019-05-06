@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -48,6 +49,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import javax.swing.AbstractAction;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
@@ -80,15 +84,18 @@ import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributor
 import top.marchand.oxygen.maven.project.support.MavenOptionsPage;
 import top.marchand.oxygen.maven.project.support.MavenProjectPlugin;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenParentNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.ImageHandler;
+import top.marchand.oxygen.maven.project.support.impl.nodes.MavenDirectoryNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.MavenPackageNode;
 
 /**
  * Maven view of Project
  * @author cmarchand
  */
 public class MavenProjectView extends javax.swing.JPanel {
-    private TreeModel model;
+    private DefaultTreeModel model;
     private static final Logger LOGGER = Logger.getLogger(MavenProjectView.class);
     private final Processor proc = new Processor(Configuration.newConfiguration());
     private final StandalonePluginWorkspace pluginWorkspaceAccess;
@@ -282,6 +289,14 @@ public class MavenProjectView extends javax.swing.JPanel {
             if(o instanceof MavenFileNode) {
                 MavenFileNode node = (MavenFileNode)o;
                 pluginWorkspaceAccess.open(node.getFileUrl());
+            }
+        } else if(evt.isPopupTrigger() || (evt.getClickCount()==1 && evt.getButton()==MouseEvent.BUTTON3)) {
+            TreePath tp = tree.getClosestPathForLocation(evt.getX(), evt.getY());
+            Object o = tp.getLastPathComponent();
+            // LOGGER.info(o.toString()+" right-clicked: "+o.getClass().getName());
+            if(o instanceof AbstractMavenParentNode) {
+                JPopupMenu popup = createContextMenu((AbstractMavenParentNode)o);
+                popup.show(((JComponent)evt.getSource()), evt.getX(), evt.getY());
             }
         }
     }//GEN-LAST:event_treeMouseClicked
@@ -565,5 +580,90 @@ public class MavenProjectView extends javax.swing.JPanel {
             return hash;
         }
         
+    }
+
+    protected JPopupMenu createContextMenu(AbstractMavenParentNode node) {
+        JPopupMenu ret = new JPopupMenu();
+        Path targetPath = getPathFromNode(node);
+        LOGGER.debug(targetPath);
+        JMenu newMnu = new JMenu("New...");
+          newMnu.add(new JMenuItem(new ActionNewFile(targetPath, node)));
+          if(targetPath.toFile().isDirectory()) {
+            newMnu.add(new JMenuItem(new ActionNewDirectory(targetPath, node)));
+          }
+        ret.add(newMnu);
+        ret.addSeparator();
+        ret.add(new JMenuItem(new ActionRefresh(targetPath, node)));
+        return ret;
+    }
+    final protected Path getPathFromNode(AbstractMavenNode node) {
+        if(node instanceof MavenFileNode) {
+            return ((MavenFileNode)node).getFile();
+        } else if(node instanceof MavenDirectoryNode) {
+            return ((MavenDirectoryNode)node).getDirectory();
+        } else if(node instanceof MavenPackageNode) {
+            return getPathFromNode(((AbstractMavenNode)node.getParent())).resolve(((MavenPackageNode) node).getValue().replaceAll("\\.", "/"));
+        } else return null;
+    }
+    
+    private class ActionRefresh extends AbstractAction {
+        public ActionRefresh(Path targetPath, AbstractMavenNode node) {
+            super("Refresh", ImageHandler.getInstance().get(ImageHandler.REFRESH_ICON));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            // TODO
+        }
+    }
+    private class ActionNewDirectory extends AbstractAction {
+        private final Path targetPath;
+        private final AbstractMavenNode node;
+        public ActionNewDirectory(Path targetPath, AbstractMavenNode node) {
+            super("Directory...", ImageHandler.getInstance().get(ImageHandler.DIRECTORY_ICON));
+            this.targetPath=targetPath;
+            this.node=node;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String directoryName = JOptionPane.showInputDialog(MavenProjectView.this, "Directory name to create:");
+            if(directoryName!=null && !directoryName.isEmpty()) {
+                // TODO: check directory does not exists
+                for(Enumeration<TreeNode> enumer=node.children();enumer.hasMoreElements();) {
+                    String value = enumer.nextElement().toString();
+                    if(value.equals(directoryName)) {
+                        // TODO: replace with a showInput with error message
+                        JOptionPane.showMessageDialog(MavenProjectView.this, "Such a sub-directory with this name already exists: "+directoryName, "Wrong directory name", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                }
+                Path newDirectory = targetPath.resolve(directoryName);
+                try {
+                    Files.createDirectory(newDirectory);
+                    MavenDirectoryNode mdn = new MavenDirectoryNode(newDirectory);
+                    node.add(mdn);
+                    ((DefaultTreeModel)tree.getModel()).nodeStructureChanged(node);
+                } catch(IOException ex) {
+                    JOptionPane.showMessageDialog(MavenProjectView.this, ex.getMessage(), "Error creating "+directoryName, JOptionPane.ERROR_MESSAGE);;
+                }
+            }
+        }
+    }
+    
+    private class ActionNewFile extends AbstractAction {
+        private final Path targetPath;
+        private final AbstractMavenParentNode node;
+        public ActionNewFile(Path targetPath, AbstractMavenParentNode node) {
+            super("File...", ImageHandler.getInstance().get(ImageHandler.FILE_ICON));
+            this.targetPath=targetPath;
+            this.node=node;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            DlgNewFile dlg = new DlgNewFile(SwingUtilities.getWindowAncestor(MavenProjectView.this), targetPath, node, model, proc);
+            dlg.setVisible(true);
+        }
     }
 }

@@ -221,8 +221,8 @@ public class DlgChooseDependencyResource extends javax.swing.JDialog {
             LOGGER.warn("getSelectionPath is null");
         }
     }
-    @Override
     
+    @Override
     protected JRootPane createRootPane() {
         cancelAction = new AbstractAction("Annuler") {
             @Override

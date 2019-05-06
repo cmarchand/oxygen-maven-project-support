@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xt:extensions xmlns:xt="http://www.oxygenxml.com/ns/extension"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.oxygenxml.com/ns/extension http://www.oxygenxml.com/ns/extension/extensions.xsd">
+  <xt:extension id="top:marchand:oxygen:maven:project">
+        <xt:location href="http://gist.github.com/cmarchand/unknown"/>
+        <xt:version>1.0.0</xt:version>
+        <xt:oxy_version>20.1+</xt:oxy_version>
+        <xt:type>plugin</xt:type>
+        <xt:author>Christophe Marchand</xt:author>
+        <xt:name>Maven Project Support</xt:name>
+        <xt:description xmlns="http://www.w3.org/1999/xhtml">
+          <html>
+            <head>
+              <title>Maven project support for Oxygen Developer</title>
+            </head>
+            <body>
+              <h2>Maven project support for Oxygen Developer</h2>
+              <p>This plugin allows to support Maven projects, with a package view of directories.
+                It adds a Maven Project view, that allows project navigation, files openning,
+                where directory structures are displayed as packages.</p>
+                <p>It add support for dependency:/ protocol, presented at XML Prague 2018. It adds
+                a context-menu in @href attributes, to find dependency resources in all declared Maven dependencies.</p>
+            </body>
+          </html></xt:description>
+        <xt:license>
+<![CDATA[
+Copyright 2019 Christophe Marchand
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+     http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+]]></xt:license>
+    </xt:extension>
+</xt:extensions>

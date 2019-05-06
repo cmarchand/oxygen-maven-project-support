@@ -48,6 +48,9 @@ public class ImageHandler {
     public static final String XPROC_ICON = "XProcIcon16.png";
     public static final String XSPEC_ICON = "XSpecIcon16.png";
     public static final String XSL_ICON = "XslIcon16.png";
+    public static final String REFRESH_ICON = "refreshIcon.png";
+    public static final String DIRECTORY_ICON = "folderAddIcon.png";
+    public static final String FILE_ICON = "fileAddIcon.png";
     public static final String XQUERY_ICON = "";
     private static ImageHandler INSTANCE;
     

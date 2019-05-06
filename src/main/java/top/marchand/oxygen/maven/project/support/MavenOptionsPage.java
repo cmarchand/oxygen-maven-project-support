@@ -18,6 +18,7 @@ package top.marchand.oxygen.maven.project.support;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.StringJoiner;
 import javax.swing.JComponent;
 import org.apache.log4j.Logger;
 import ro.sync.exml.plugin.option.OptionPagePluginExtension;
@@ -34,6 +35,7 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
     public static final String OPTION_INSTALL_DIR = OPTION_PREFIX+".install.dir";
     public static final String DEFAULT_MAVEN_INSTALL_DIR = "";
     public static final String DEFAULT_REPO_LOCATION = "${home}/.m2/repository/";
+    public static final String OPTION_RECENT_NEW_TEMPLATES = OPTION_PREFIX+".recent.templates";
     public static MavenOptionsPage INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(MavenOptionsPage.class);
     private MavenOptionView view;
@@ -72,7 +74,7 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
 
     /**
      * Returns the Maven installation directory, as configured in options
-     * @return MAveninstallation directory
+     * @return Maveninstallation directory
      */
     public String getMavenInstallDir() {
         return expand(PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().getOption(OPTION_INSTALL_DIR, ""));
@@ -80,6 +82,28 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
     
     private String expand(String s) {
         return PluginWorkspaceProvider.getPluginWorkspace().getUtilAccess().expandEditorVariables(s, null);
+    }
+    
+    /**
+     * Return the recent templates, a comma-separated template name list.
+     * @return A comma-separated list of template names, max 5 names
+     */
+    public String getRecentTemplates() {
+        return PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().getOption(OPTION_RECENT_NEW_TEMPLATES, "");
+    }
+    
+    public void setRecentTemplateName(String templateName) {
+        String[] recentTemplates = getRecentTemplates().split(",");
+        StringJoiner joiner = new StringJoiner(",");
+        int pos = 0;
+        joiner.add(templateName); pos++;
+        for(String s:recentTemplates) {
+            if(!templateName.equals(s)) {
+                joiner.add(s); pos++;
+                if(pos==5) break;
+            }
+        }
+        PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().setOption(OPTION_RECENT_NEW_TEMPLATES, templateName);
     }
     
 }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+  <template>
+    <name>XSLT Stylesheet</name>
+    <file>/top/marchand/oxygen/templates/xsl-stylesheet.xml</file>
+    <extension>xsl</extension>
+    <icon>XslIcon16.png</icon>
+  </template>
+  <template>
+    <name>XSpec unit test</name>
+    <file>/top/marchand/oxygen/templates/xspec.xml</file>
+    <extension>xspec</extension>
+    <icon>XSpecIcon16.png</icon>
+  </template>
+  <template>
+    <name>Document Type Definition</name>
+    <file>/top/marchand/oxygen/templates/dtd.xml</file>
+    <extension>dtd</extension>
+    <icon>DtdIcon16.png</icon>
+  </template>
+  <template>
+    <name>ISO Schematron</name>
+    <description>Schematron</description>
+    <file>/top/marchand/oxygen/templates/iso-schematron.xml</file>
+    <extension>sch</extension>
+    <icon>SchIcon16.png</icon>
+  </template>
+  <template>
+    <name>POM</name>
+    <description>Maven Project</description>
+    <file>/top/marchand/oxygen/templates/pom.xml</file>
+    <extension>xml</extension>
+    <filename>pom.xml</filename>
+    <icon>Maven2Icon.gif</icon>
+  </template>
+</templates>
