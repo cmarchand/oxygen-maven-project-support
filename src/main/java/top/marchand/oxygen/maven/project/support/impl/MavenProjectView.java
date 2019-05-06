@@ -15,6 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl;
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -59,6 +60,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import javax.swing.text.BadLocationException;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
@@ -588,7 +590,9 @@ public class MavenProjectView extends javax.swing.JPanel {
         LOGGER.debug(targetPath);
         JMenu newMnu = new JMenu("New...");
           newMnu.add(new JMenuItem(new ActionNewFile(targetPath, node)));
-          if(targetPath.toFile().isDirectory()) {
+          if(node instanceof MavenDirectoryNode || node instanceof MavenPackageNode) {
+              newMnu.add(new JMenuItem(new ActionNewPackage(targetPath, node)));
+          } else if(targetPath.toFile().isDirectory()) {
             newMnu.add(new JMenuItem(new ActionNewDirectory(targetPath, node)));
           }
         ret.add(newMnu);
@@ -629,7 +633,6 @@ public class MavenProjectView extends javax.swing.JPanel {
         public void actionPerformed(ActionEvent e) {
             String directoryName = JOptionPane.showInputDialog(MavenProjectView.this, "Directory name to create:");
             if(directoryName!=null && !directoryName.isEmpty()) {
-                // TODO: check directory does not exists
                 for(Enumeration<TreeNode> enumer=node.children();enumer.hasMoreElements();) {
                     String value = enumer.nextElement().toString();
                     if(value.equals(directoryName)) {
@@ -647,6 +650,61 @@ public class MavenProjectView extends javax.swing.JPanel {
                 } catch(IOException ex) {
                     JOptionPane.showMessageDialog(MavenProjectView.this, ex.getMessage(), "Error creating "+directoryName, JOptionPane.ERROR_MESSAGE);;
                 }
+            }
+        }
+    }
+    private class ActionNewPackage extends AbstractAction {
+        private final Path targetPath;
+        private final AbstractMavenParentNode node;
+        public ActionNewPackage(Path targetPath, AbstractMavenParentNode node) {
+            super("Package...", ImageHandler.getInstance().get(ImageHandler.PACKAGE_ICON));
+            this.targetPath=targetPath;
+            this.node=node;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            AbstractMavenParentNode _referenceNode = node;
+            String root = "";
+            if(node instanceof MavenPackageNode) {
+                root = node.getValue()+".";
+                _referenceNode = (AbstractMavenParentNode)node.getParent();
+            }
+            MavenDirectoryNode referenceNode = (MavenDirectoryNode)_referenceNode;
+            LOGGER.debug("referenceNode is "+referenceNode);
+            Window ancestor = SwingUtilities.getWindowAncestor(MavenProjectView.this);
+            String ret = JOptionPane.showInputDialog(ancestor,"Create new package", root);
+            if(ret!=null && !ret.isEmpty()) {
+                LOGGER.debug("ret is "+ret);
+                // check if such a package does not exists
+                for(Enumeration enumer = referenceNode.children(); enumer.hasMoreElements(); ) {
+                    DefaultMutableTreeNode child = (DefaultMutableTreeNode)enumer.nextElement();
+                    LOGGER.debug("\tchecking "+child.toString());
+                    if(child.toString().equals(ret)) {
+                        JOptionPane.showMessageDialog(ancestor, "This package already exists: "+ret, "Package creation failed", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+                Path dirToCreate = referenceNode.getDirectory().resolve(ret.replaceAll("\\.", "/"));
+                LOGGER.debug("dirToCreate is "+dirToCreate.toString());
+                if(dirToCreate.toFile().exists()) {
+                    JOptionPane.showMessageDialog(ancestor, "This file already exists: "+dirToCreate.toString(),"Package creation failed", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                try {
+                    Files.createDirectory(dirToCreate);
+                    LOGGER.debug("directory created");
+                    MavenPackageNode mpn = new MavenPackageNode(ret);
+                    LOGGER.debug("mpn created: "+mpn.toString());
+                    referenceNode.add(mpn);
+                    LOGGER.debug("mpn added to referenceNode");
+                    ((DefaultTreeModel)tree.getModel()).nodeStructureChanged(referenceNode);
+                    LOGGER.debug("model notified of structure change");
+                } catch(IOException ex) {
+                    JOptionPane.showMessageDialog(ancestor, ex.getMessage(), "Package creation failed", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                LOGGER.warn("ret is null or empty: "+ret);
             }
         }
     }

@@ -16,10 +16,14 @@
 package top.marchand.oxygen.maven.project.support.impl;
 
 import java.awt.Color;
+import java.awt.Desktop;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import javax.swing.JFileChooser;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
+import org.apache.log4j.Logger;
 import ro.sync.exml.workspace.api.PluginWorkspace;
 
 /**
@@ -29,7 +33,8 @@ import ro.sync.exml.workspace.api.PluginWorkspace;
 public class MavenOptionView extends javax.swing.JPanel {
 
     private final PluginWorkspace pluginWorkspace;
-    private String installDirReport, localRepoDir;
+    private String installDirReport;
+    private static final Logger LOGGER = Logger.getLogger(MavenOptionView.class);
     
     public MavenOptionView(PluginWorkspace pluginWorkspace) {
         super();
@@ -58,6 +63,8 @@ public class MavenOptionView extends javax.swing.JPanel {
         dfMavenInstallDir = new javax.swing.JTextField();
         pbChooseInstallDir = new javax.swing.JButton();
         lblReport = new javax.swing.JLabel();
+        famfamLink = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
 
         lblMavenDir.setText("Maven install directory");
 
@@ -79,6 +86,17 @@ public class MavenOptionView extends javax.swing.JPanel {
             }
         });
 
+        famfamLink.setText("Some icons are from mjames@gmail.com");
+        famfamLink.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                famfamLinkMouseClicked(evt);
+            }
+        });
+
+        jLabel2.setForeground(new java.awt.Color(0, 102, 255));
+        jLabel2.setText("http://www.famfamfam.com/lab/icons/silk/");
+        jLabel2.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -86,14 +104,20 @@ public class MavenOptionView extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblReport, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(famfamLink)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblReport, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(lblMavenDir)
                         .addGap(25, 25, 25)
                         .addComponent(dfMavenInstallDir, javax.swing.GroupLayout.DEFAULT_SIZE, 272, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(pbChooseInstallDir, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(2, 2, 2)))
+                        .addGap(2, 2, 2))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel2)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -105,7 +129,11 @@ public class MavenOptionView extends javax.swing.JPanel {
                     .addComponent(dfMavenInstallDir, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(pbChooseInstallDir))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(lblReport, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(lblReport, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(famfamLink))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -144,7 +172,7 @@ public class MavenOptionView extends javax.swing.JPanel {
                 installDirReport=text;
                 dfMavenInstallDirFocusGained(null);
             }
-        } catch(Exception ex) {
+        } catch(URISyntaxException ex) {
             installDirReport = ex.getLocalizedMessage();
             setErrorMarker(dfMavenInstallDir, true);
         }
@@ -153,6 +181,17 @@ public class MavenOptionView extends javax.swing.JPanel {
     private void dfMavenInstallDirFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_dfMavenInstallDirFocusGained
         lblReport.setText(installDirReport);
     }//GEN-LAST:event_dfMavenInstallDirFocusGained
+
+    private void famfamLinkMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_famfamLinkMouseClicked
+        Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+            try {
+                desktop.browse(new URI(famfamLink.getText()));
+            } catch (IOException | URISyntaxException e) {
+                LOGGER.error("Opening famfam link");
+            }
+        }
+    }//GEN-LAST:event_famfamLinkMouseClicked
 
     private void setErrorMarker(JTextField fld, boolean isError) {
         if(isError) {
@@ -164,6 +203,8 @@ public class MavenOptionView extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField dfMavenInstallDir;
+    private javax.swing.JLabel famfamLink;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel lblMavenDir;
     private javax.swing.JLabel lblReport;
     private javax.swing.JButton pbChooseInstallDir;

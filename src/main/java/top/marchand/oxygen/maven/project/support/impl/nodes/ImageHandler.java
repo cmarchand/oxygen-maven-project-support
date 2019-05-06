@@ -45,6 +45,7 @@ public class ImageHandler {
     public static final String SQL_ICON = "SqlIcon16.png";
     public static final String WSDL_ICON = "WsdlIcon16.png";
     public static final String PACKAGE_ICON = "package.png";
+    public static final String XML_ICON = "XmlIcon16.png";
     public static final String XPROC_ICON = "XProcIcon16.png";
     public static final String XSPEC_ICON = "XSpecIcon16.png";
     public static final String XSL_ICON = "XslIcon16.png";

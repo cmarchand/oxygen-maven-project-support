@@ -15,9 +15,6 @@
  */
 package top.marchand.oxygen.maven.project.support;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.StringJoiner;
 import javax.swing.JComponent;
 import org.apache.log4j.Logger;
@@ -34,7 +31,6 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
     public static final String OPTION_PREFIX = "top.marchand.maven";
     public static final String OPTION_INSTALL_DIR = OPTION_PREFIX+".install.dir";
     public static final String DEFAULT_MAVEN_INSTALL_DIR = "";
-    public static final String DEFAULT_REPO_LOCATION = "${home}/.m2/repository/";
     public static final String OPTION_RECENT_NEW_TEMPLATES = OPTION_PREFIX+".recent.templates";
     public static MavenOptionsPage INSTANCE;
     private static final Logger LOGGER = Logger.getLogger(MavenOptionsPage.class);
@@ -100,10 +96,10 @@ public class MavenOptionsPage extends OptionPagePluginExtension {
         for(String s:recentTemplates) {
             if(!templateName.equals(s)) {
                 joiner.add(s); pos++;
-                if(pos==5) break;
+                if(pos>=5) break;
             }
         }
-        PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().setOption(OPTION_RECENT_NEW_TEMPLATES, templateName);
+        PluginWorkspaceProvider.getPluginWorkspace().getOptionsStorage().setOption(OPTION_RECENT_NEW_TEMPLATES, joiner.toString());
     }
     
 }

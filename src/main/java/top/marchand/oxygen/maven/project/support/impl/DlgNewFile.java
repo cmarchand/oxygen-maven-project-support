@@ -5,6 +5,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl;
 
+import java.awt.Cursor;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -20,7 +21,6 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JRootPane;
 import javax.swing.KeyStroke;
-import javax.swing.event.CaretEvent;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -49,7 +49,6 @@ import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
  * @author cmarchand
  */
 public class DlgNewFile extends javax.swing.JDialog {
-//    private String result;
     private final FilteredTreeModel treeModel;
     private AbstractAction cancelAction = null, okAction = null;
     private static final Logger LOGGER = Logger.getLogger(DlgNewFile.class);
@@ -112,9 +111,6 @@ public class DlgNewFile extends javax.swing.JDialog {
                 dfFilename.setText("");
                 currentTemplate=null;
             }
-        });
-        dfFilter.addCaretListener((CaretEvent e) -> {
-            treeModel.filter(dfFilter.getText());
         });
     }
     
@@ -197,8 +193,6 @@ public class DlgNewFile extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel1 = new javax.swing.JLabel();
-        dfFilter = new javax.swing.JTextField();
         pkOk = new javax.swing.JButton();
         pbCancel = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -207,8 +201,6 @@ public class DlgNewFile extends javax.swing.JDialog {
         dfFilename = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-
-        jLabel1.setText("Filter");
 
         pkOk.setText("Ok");
         pkOk.addActionListener(new java.awt.event.ActionListener() {
@@ -246,23 +238,14 @@ public class DlgNewFile extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(pkOk, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane1)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(dfFilter)))
+                        .addComponent(jScrollPane1)
                         .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(dfFilter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 292, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(pkOk)
@@ -275,7 +258,13 @@ public class DlgNewFile extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void okPressed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okPressed
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         Path fileToCreate = targetPath.resolve(dfFilename.getText());
+        if(fileToCreate.toFile().exists()) {
+            JOptionPane.showMessageDialog(this, "This file already exists:\n"+fileToCreate.toString(),"File already exists", JOptionPane.WARNING_MESSAGE);
+            dfFilename.requestFocus();
+            return;
+        }
         try (OutputStream wr = Files.newOutputStream(fileToCreate); InputStream is = getClass().getResourceAsStream(currentTemplate.getFile())) {
             byte[] buffer = new byte[2048];
             int read = is.read(buffer);
@@ -284,15 +273,19 @@ public class DlgNewFile extends javax.swing.JDialog {
                 read = is.read(buffer);
             }
         } catch(IOException ex) {
-            LOGGER.error("Creating "+fileToCreate.toString(), ex);
+            LOGGER.error("While creating "+fileToCreate.toString(), ex);
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error creating "+fileToCreate.toString(), JOptionPane.ERROR_MESSAGE);
+            setCursor(Cursor.getDefaultCursor());
+            return;
         }
         MavenOptionsPage.INSTANCE.setRecentTemplateName(currentTemplate.getName());
         MavenFileNode fileNode = new MavenFileNode(fileToCreate);
         node.add(fileNode);
-        modelToUpdate.nodeStructureChanged(node);
         PluginWorkspaceProvider.getPluginWorkspace().open(fileNode.getFileUrl());
+        setCursor(Cursor.getDefaultCursor());
         setVisible(false);
+        modelToUpdate.nodeStructureChanged(node);
+        
     }//GEN-LAST:event_okPressed
 
     private void cancelPressed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelPressed
@@ -382,8 +375,6 @@ public class DlgNewFile extends javax.swing.JDialog {
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField dfFilename;
-    private javax.swing.JTextField dfFilter;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton pbCancel;
