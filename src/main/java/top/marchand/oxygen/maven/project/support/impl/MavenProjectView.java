@@ -611,13 +611,36 @@ public class MavenProjectView extends javax.swing.JPanel {
     }
     
     private class ActionRefresh extends AbstractAction {
+        private final Path targetPath;
+        private final AbstractMavenNode node;
         public ActionRefresh(Path targetPath, AbstractMavenNode node) {
             super("Refresh", ImageHandler.getInstance().get(ImageHandler.REFRESH_ICON));
+            this.targetPath=targetPath;
+            this.node=node;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            // TODO
+            // updating tree in UI Thread, it shouldn't be a long task
+            MavenProjectExplorer explorer = new MavenProjectExplorer(proc, node);
+            LOGGER.debug("explorer created");
+            boolean pomUpdated = explorer.update(chkShowTargetDirs.isSelected());
+            ((DefaultTreeModel)tree.getModel()).nodeStructureChanged(node);
+            LOGGER.debug("tree updated");
+            if(pomUpdated) {
+                LOGGER.debug("a pom has been updated");
+                // this one in background thread, it can take a long time...
+                File pomFile = new File(getProjectDir(), "pom.xml");
+                try {
+                    new DependencyScanner(
+                        pomFile.toPath(), 
+                        new File(new URI(MavenOptionsPage.INSTANCE.getMavenInstallDir()))).execute();
+                } catch(URISyntaxException ex) {
+                    // ignore
+                }
+            } else {
+                LOGGER.debug("no pom.xml updated");
+            }
         }
     }
     private class ActionNewDirectory extends AbstractAction {

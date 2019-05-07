@@ -15,6 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
+import java.nio.file.Path;
 import javax.swing.ImageIcon;
 
 /**
@@ -23,10 +24,12 @@ import javax.swing.ImageIcon;
  */
 public class MavenProjectNode extends AbstractMavenParentNode {
     private final String projectName;
+    private final Path projectPath;
     
-    public MavenProjectNode(String projectName) {
+    public MavenProjectNode(String projectName, Path projectPath) {
         super();
         this.projectName = projectName;
+        this.projectPath=projectPath;
     }
 
     @Override
@@ -38,5 +41,7 @@ public class MavenProjectNode extends AbstractMavenParentNode {
     public ImageIcon getIcon() {
         return ImageHandler.getInstance().get(ImageHandler.MAVEN_ICON);
     }
+    
+    public Path getProjectPath() { return projectPath; }
 
 }

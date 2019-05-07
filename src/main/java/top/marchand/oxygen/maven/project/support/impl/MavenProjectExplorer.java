@@ -33,6 +33,7 @@ import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XdmNode;
 import org.apache.log4j.Logger;
 import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenNode;
+import top.marchand.oxygen.maven.project.support.impl.nodes.AbstractMavenParentNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenDirectoryNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenFileNode;
 import top.marchand.oxygen.maven.project.support.impl.nodes.MavenProjectNode;
@@ -48,10 +49,28 @@ public class MavenProjectExplorer {
     private static final List<String> EXCLUDE_DIRS = Arrays.asList(".git", ".project", ".svn");
     private static final List<String> EXCLUDE_FILES = Arrays.asList(".gitignore", ".DS_Store");
     
+    // for updating
+    private AbstractMavenNode nodeToUpdate;
+    
     public MavenProjectExplorer(Path directory, Processor proc) {
         super();
         this.directory=directory;
         this.proc=proc;
+    }
+    
+    public MavenProjectExplorer(Processor proc, AbstractMavenNode nodeToUpdate) {
+        this(getDirectoryOfMavenNode(nodeToUpdate), proc);
+        this.nodeToUpdate = nodeToUpdate;
+//        LOGGER.debug("MavenProjectExplorer at "+directory.toString());
+    }
+    
+    private static Path getDirectoryOfMavenNode(AbstractMavenNode node) {
+        if(node instanceof MavenProjectNode) {
+            MavenProjectNode mpn = (MavenProjectNode)node;
+            return mpn.getProjectPath();
+        } else {
+            return getDirectoryOfMavenNode((AbstractMavenNode)node.getParent());
+        }
     }
     
     /**
@@ -70,12 +89,30 @@ public class MavenProjectExplorer {
         return null;
     }
     
+    public boolean update(boolean includeTargetDirectory) {
+        try {
+            Path startOfUpdatePath = ((MavenDirectoryNode)nodeToUpdate).getDirectory();
+//            LOGGER.debug("update() startOfUpdatePath: "+startOfUpdatePath.toString());
+            MavenFileVisitor visitor = new MavenFileVisitor(directory, includeTargetDirectory, nodeToUpdate);
+            nodeToUpdate.removeAllChildren();
+//            LOGGER.debug("updating from "+startOfUpdatePath.toString());
+            Files.walkFileTree(startOfUpdatePath, visitor);
+            return visitor.isPomUpdated();
+        } catch(IOException ex) {
+            LOGGER.error("while exploring "+directory, ex);
+            return false;
+        }
+    }
+    
     private class MavenFileVisitor implements FileVisitor<Path> {
         private final Stack<MavenDirectoryNode> stack;
         private final boolean includeTargetDirectory;
         private final Path root;
         private static final String SRC = "src";
         private MavenProjectNode rootNode;
+        private boolean pomUpdated;
+        private boolean shouldIgnoreFirst = false;
+        private String ignored = null;
         
         public MavenFileVisitor(Path root, boolean includeTargetDirectory) {
             super();
@@ -83,22 +120,43 @@ public class MavenProjectExplorer {
             this.root=root;
             stack = new Stack<>();
         }
+        public MavenFileVisitor(Path root, boolean includeTargetDirectory, AbstractMavenNode nodeToUpdate) {
+            this(root, includeTargetDirectory);
+//            LOGGER.debug("MavenFileVisitor("+root.toString()+", "+nodeToUpdate.toString()+")");
+            addToStack(nodeToUpdate);
+//            LOGGER.debug("stack is "+stack.size()+" high");
+            shouldIgnoreFirst = true;
+        }
+        private void addToStack(AbstractMavenNode node) {
+//            LOGGER.debug("addToStack("+node.toString()+")");
+            if(node==null) return;
+            if(!(node instanceof MavenProjectNode)) {
+                addToStack((AbstractMavenNode)node.getParent());
+            }
+            if(node instanceof MavenDirectoryNode ) { // || node instanceof MavenProjectNode
+//                LOGGER.debug("stacking "+node.toString());
+                stack.push((MavenDirectoryNode)node);
+            } else {
+//                LOGGER.warn("addToStack("+node.getClass().getName()+")");
+            }
+        }
 
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
             Path relative = root.relativize(dir);
 //            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
             if(root.equals(dir)) {
-                LOGGER.debug("starting maven project at "+dir.toString());
+//                LOGGER.debug("starting maven project at "+dir.toString());
                 Path pom = dir.resolve("pom.xml");
-                MavenProjectNode node = new MavenProjectNode(getProjectName(pom.toFile()));
+                MavenProjectNode node = new MavenProjectNode(getProjectName(pom.toFile()), dir);
                 node.add(new MavenFileNode(pom));
                 rootNode = node;
+                pomUpdated=true;
                 return FileVisitResult.CONTINUE;
             } else if(isTraversable(relative)) {
                 Path pom = dir.resolve("pom.xml");
                 if(Files.isRegularFile(pom)) {
-                    LOGGER.debug("found sub-maven project at "+dir.toString());
+//                    LOGGER.debug("found sub-maven project at "+dir.toString());
                     // This is a maven project, run a new explorer...
                     try {
                         MavenProjectExplorer explorer = new MavenProjectExplorer(dir, proc);
@@ -108,6 +166,7 @@ public class MavenProjectExplorer {
                         } else {
                             stack.peek().add(explorer.explore(includeTargetDirectory));
                         }
+                        pomUpdated=true;
                         return FileVisitResult.SKIP_SUBTREE;
                     } catch(RuntimeException ex) {
                         // there are cases where it's not a valid maven project, fallback
@@ -123,7 +182,13 @@ public class MavenProjectExplorer {
                         return FileVisitResult.CONTINUE;
                     }
                 } else {
-                    LOGGER.debug("found normal sub-dir at "+dir.toString());
+//                    LOGGER.debug("found normal sub-dir at "+dir.toString());
+                    if(shouldIgnoreFirst) {
+//                        LOGGER.debug("\tignored.");
+                        shouldIgnoreFirst=false;
+                        ignored=dir.toString();
+                        return FileVisitResult.CONTINUE;
+                    }
                     // Normal directory
                     if((relative.startsWith(SRC) && stack.size()<3) || !relative.startsWith(SRC)) {
                         MavenDirectoryNode node = new MavenDirectoryNode(dir);
@@ -144,13 +209,15 @@ public class MavenProjectExplorer {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             if(exc!=null) throw exc;
             Path relative = root.relativize(dir);
-//            LOGGER.debug("preVisitDirectory("+relative.toString()+")");
+//            LOGGER.debug("postVisitDirectory("+relative.toString()+")");
             if(root.equals(dir)) {
                 // terminated
             } else if(isTraversable(relative)) {
                 // it can not be a maven diretory, it has been skipped
                 if((relative.startsWith(SRC) && relative.getNameCount()<=3) || !relative.startsWith(SRC)) {
-                    stack.pop();
+                    if(!dir.toString().equals(ignored)) {
+                        stack.pop();
+                    }
                 }
             }
             return FileVisitResult.CONTINUE;
@@ -170,10 +237,16 @@ public class MavenProjectExplorer {
                     packageName = "<default>";
                 }
                 MavenDirectoryNode node = (MavenDirectoryNode)stack.peek();
+//                LOGGER.debug("Adding "+packageName+"."+file+" to "+node.toString());
                 node.addPackageEntry(packageName, file);
             } else if(isFileAcceptable(file) && relative.startsWith(SRC)) {
                 MavenDirectoryNode node = (MavenDirectoryNode)stack.peek();
                 node.add(new MavenFileNode(file));
+            } else if(isFileAcceptable(file) && !"pom.xml".equals(file.getFileName().toString())) {
+                AbstractMavenParentNode parent = stack.isEmpty() ? rootNode : stack.peek();
+                parent.add(new MavenFileNode(file));
+            } else {
+                LOGGER.debug("file skipped: "+relative.toString());
             }
             return FileVisitResult.CONTINUE;
         }
@@ -191,9 +264,12 @@ public class MavenProjectExplorer {
             return !"target".equals(dir.getFileName().toString());
         }
         private boolean isFileAcceptable(Path file) {
-            return !EXCLUDE_FILES.contains(file.getFileName().toString());
+            String filename = file.getFileName().toString();
+            return !EXCLUDE_FILES.contains(filename) && !filename.endsWith(".xpr");
         }
         protected MavenProjectNode getRootNode() { return rootNode; }
+        protected Path getRootPath() { return root; }
+        protected boolean isPomUpdated() { return pomUpdated; }
     }
     
     protected String getProjectName(File pomFile) {

@@ -96,4 +96,12 @@ public class MavenDirectoryNode extends AbstractMavenParentNode {
         pack.add(new MavenFileNode(file));
     }
 
+    @Override
+    public void removeAllChildren() {
+        super.removeAllChildren();
+        packages.clear();
+    }
+    
+    
+
 }
