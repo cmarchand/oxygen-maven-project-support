@@ -83,7 +83,7 @@ public class MavenProjectExplorer {
             MavenFileVisitor visitor = new MavenFileVisitor(directory, includeTargetDirectory);
             Files.walkFileTree(directory, visitor);
             return visitor.getRootNode();
-        } catch(IOException ex) {
+        } catch(Throwable ex) {
             LOGGER.error("while exploring "+directory, ex);
         }
         return null;
@@ -98,7 +98,7 @@ public class MavenProjectExplorer {
 //            LOGGER.debug("updating from "+startOfUpdatePath.toString());
             Files.walkFileTree(startOfUpdatePath, visitor);
             return visitor.isPomUpdated();
-        } catch(IOException ex) {
+        } catch(Throwable ex) {
             LOGGER.error("while exploring "+directory, ex);
             return false;
         }
