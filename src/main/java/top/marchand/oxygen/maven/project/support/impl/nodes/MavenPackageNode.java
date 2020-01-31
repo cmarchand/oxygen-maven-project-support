@@ -15,6 +15,7 @@
  */
 package top.marchand.oxygen.maven.project.support.impl.nodes;
 
+import java.io.StringWriter;
 import javax.swing.ImageIcon;
 
 /**
@@ -22,21 +23,42 @@ import javax.swing.ImageIcon;
  * @author cmarchand
  */
 public class MavenPackageNode extends AbstractMavenParentNode {
-    private String packageName;
+    private final String packageName;
+    private final String value;
     
     public MavenPackageNode(String packageName) {
         super();
         this.packageName=packageName;
+        if(packageName.length()<25) {
+            value=packageName;
+        } else {
+            String[] pNames = packageName.split("\\.");
+            StringWriter sw = new StringWriter();
+            for(int i=0; i<pNames.length-2;i++) {
+                sw.append(pNames[i].substring(0,1)).append(".");
+            }
+            sw.append(pNames[pNames.length-1]);
+            value = sw.toString();
+        }
     }
 
     @Override
     public String getValue() {
-        return packageName;
+        return value;
     }
 
     @Override
     public ImageIcon getIcon() {
         return ImageHandler.getInstance().get(ImageHandler.PACKAGE_ICON);
+    }
+    
+    public String getPackageName() {
+        return packageName;
+    }
+
+    @Override
+    public String getCompleteValue() {
+        return packageName;
     }
     
 }

@@ -30,7 +30,11 @@ public abstract class AbstractMavenNode extends DefaultMutableTreeNode implement
 
     @Override
     public int compareTo(AbstractMavenNode o) {
-        return getValue().compareTo(o.getValue());
-    }   
+        return getCompleteValue().compareTo(o.getCompleteValue());
+    }
+    
+    public String getCompleteValue() {
+        return getValue();
+    }
     
 }

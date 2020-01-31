@@ -384,7 +384,7 @@ public class MavenProjectView extends javax.swing.JPanel {
             if(o instanceof AbstractMavenNode) {
                 AbstractMavenNode node = (AbstractMavenNode)o;
                 // there is an important chance that renderer is outside of viewport
-                return node.getValue();
+                return node.getCompleteValue();
             }
             return super.getToolTipText(event);
         }
@@ -435,11 +435,30 @@ public class MavenProjectView extends javax.swing.JPanel {
                     output = baos.toString("UTF-8");
                     LOGGER.info("Maven terminated");
                 } else {
+                    LOGGER.error("Maven has an "+result.getExitCode()+" exit code");
                     Exception ex = result.getExecutionException();
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    ex.printStackTrace(pw);
-                    JOptionPane.showMessageDialog(MavenProjectView.this, sw.toString(), ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+                    if(ex!=null) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        ex.printStackTrace(pw);
+                        JOptionPane.showMessageDialog(MavenProjectView.this, sw.toString(), ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        // maven has failed. Try to get error messages from output
+                        try (BufferedReader br = new BufferedReader(new StringReader(baos.toString()))) {
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            String line = br.readLine();
+                            while(line!=null) {
+                                if(line.startsWith("[ERROR] ")) {
+                                    Arrays.asList(line.split("(?<=\\G.{80})")).forEach((s) -> pw.println(s));
+                                }
+                                line = br.readLine();
+                            }
+                            JOptionPane.showMessageDialog(MavenProjectView.this, sw.toString(), "Error while loading dependencies", JOptionPane.ERROR_MESSAGE);
+                        } catch(IOException ioEx) {
+                            LOGGER.error("while filtering maven output", ioEx);
+                        }
+                    }
                 }
             } catch(MavenInvocationException | UnsupportedEncodingException ex) {
                     StringWriter sw = new StringWriter();
@@ -461,6 +480,7 @@ public class MavenProjectView extends javax.swing.JPanel {
             lblStatus.setText("");
             return "OK";
         }
+        
         private List<String> filterClasspath(final String input) {
             TreeSet<String> set = new TreeSet<>();
             BufferedReader reader = new BufferedReader(new StringReader(input));
@@ -606,8 +626,15 @@ public class MavenProjectView extends javax.swing.JPanel {
         } else if(node instanceof MavenDirectoryNode) {
             return ((MavenDirectoryNode)node).getDirectory();
         } else if(node instanceof MavenPackageNode) {
-            return getPathFromNode(((AbstractMavenNode)node.getParent())).resolve(((MavenPackageNode) node).getValue().replaceAll("\\.", "/"));
-        } else return null;
+            return getPathFromNode(((AbstractMavenNode)node.getParent()))
+                    .resolve(((MavenPackageNode) node)
+                            .getCompleteValue()
+                            .replaceAll("\\.", "/")
+                            .replaceAll("<default>","")
+                    );
+        } else {
+            return null;
+        }
     }
     
     private class ActionRefresh extends AbstractAction {
@@ -677,11 +704,9 @@ public class MavenProjectView extends javax.swing.JPanel {
         }
     }
     private class ActionNewPackage extends AbstractAction {
-        private final Path targetPath;
         private final AbstractMavenParentNode node;
         public ActionNewPackage(Path targetPath, AbstractMavenParentNode node) {
             super("Package...", ImageHandler.getInstance().get(ImageHandler.PACKAGE_ICON));
-            this.targetPath=targetPath;
             this.node=node;
         }
 
@@ -690,7 +715,12 @@ public class MavenProjectView extends javax.swing.JPanel {
             AbstractMavenParentNode _referenceNode = node;
             String root = "";
             if(node instanceof MavenPackageNode) {
-                root = node.getValue()+".";
+                String packageName = ((MavenPackageNode)node).getPackageName();
+                if("<default>".equals(packageName)) {
+                    root = "";
+                } else {
+                    root = node.getCompleteValue()+".";
+                }
                 _referenceNode = (AbstractMavenParentNode)node.getParent();
             }
             MavenDirectoryNode referenceNode = (MavenDirectoryNode)_referenceNode;
