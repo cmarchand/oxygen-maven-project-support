@@ -22,7 +22,7 @@
   
   <groupId>top.marchand.oxygen</groupId>
   <artifactId>maven-project-support</artifactId>
-  <version>1.02.00</version>
+  <version>1.02.01-SNAPSHOT</version>
   
   <name>Oxygen Maven Project Support</name>
   

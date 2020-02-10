@@ -4,7 +4,7 @@
     xsi:schemaLocation="http://www.oxygenxml.com/ns/extension http://www.oxygenxml.com/ns/extension/extensions.xsd">
   <xt:extension id="top:marchand:oxygen:maven:project">
         <xt:location href="http://gist.github.com/cmarchand/unknown"/>
-        <xt:version>1.0.0</xt:version>
+        <xt:version>1.02.00</xt:version>
         <xt:oxy_version>20.1+</xt:oxy_version>
         <xt:type>plugin</xt:type>
         <xt:author>Christophe Marchand</xt:author>
@@ -17,10 +17,12 @@
             <body>
               <h2>Maven project support for Oxygen Developer</h2>
               <p>This plugin allows to support Maven projects, with a package view of directories.
-                It adds a Maven Project view, that allows project navigation, files openning,
-                where directory structures are displayed as packages.</p>
-                <p>It add support for dependency:/ protocol, presented at XML Prague 2018. It adds
-                a context-menu in @href attributes, to find dependency resources in all declared Maven dependencies.</p>
+                This plugin adds a Maven Project view, that allows project navigation, files openning,
+                file creation, where directory structures are displayed as packages.</p>
+              <p>It adds support for dependency:/ protocol, presented at XML Prague 2018. It adds
+a context-menu in @href attributes, to find dependency resources in all declared Maven dependencies.</p>
+              <p>1.02.00 release adds a compressed view of package names, if they are longer than 25 characters.
+It also corrects a bug where files were created at a wrong location when in a package.</p>
             </body>
           </html></xt:description>
         <xt:license>
